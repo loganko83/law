@@ -2,15 +2,20 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../components/Button';
 import { Camera, Upload as UploadIcon, FileText, X, ChevronLeft, ScanLine, AlertTriangle, RefreshCw, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ContractAnalysis, UserProfile } from '../types';
+import { analyzeContract } from '../services/contractAnalysis';
 
 interface UploadProps {
-  onAnalyze: () => void;
+  onAnalyze: (analysis: ContractAnalysis, contractText: string) => void;
   onCancel: () => void;
+  userProfile?: UserProfile;
 }
 
-export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel }) => {
+export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile }) => {
   const [file, setFile] = useState<File | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
   
   // Camera State
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -111,44 +116,112 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel }) => {
     }
   };
 
-  const handleStartAnalysis = () => {
+  const handleStartAnalysis = async () => {
     if (!file) return;
     setIsScanning(true);
-    // Simulate API delay
-    setTimeout(() => {
-      onAnalyze();
-    }, 2500);
+    setError(null);
+    setAnalysisProgress('Preparing document...');
+
+    try {
+      // Step 1: Extract text from file
+      setAnalysisProgress('Extracting text from document...');
+      let contractText = '';
+
+      if (file.type.startsWith('text/') || file.name.endsWith('.txt')) {
+        // Plain text file
+        contractText = await file.text();
+      } else if (file.type === 'application/pdf') {
+        // For PDF, we'll use a simplified text extraction
+        // In production, use pdf.js or server-side extraction
+        setAnalysisProgress('Processing PDF (text extraction)...');
+        // Placeholder: read as text for demo
+        contractText = await file.text().catch(() => '');
+        if (!contractText) {
+          // If PDF text extraction fails, use demo text
+          contractText = `This is a placeholder for PDF content from: ${file.name}.
+          In production, this would be extracted using pdf.js or OCR.
+          For testing, please upload a .txt file with contract text.`;
+        }
+      } else if (file.type.startsWith('image/')) {
+        // For images, we would use OCR
+        setAnalysisProgress('Image detected - OCR processing...');
+        // Placeholder for OCR
+        contractText = `Image contract from: ${file.name}.
+        In production, this would be processed with Tesseract.js OCR.
+        For testing, please upload a .txt file with contract text.`;
+      } else {
+        // Try to read as text
+        contractText = await file.text().catch(() => '');
+      }
+
+      if (!contractText || contractText.length < 50) {
+        throw new Error('Could not extract sufficient text from the document. Please try a different file format.');
+      }
+
+      // Step 2: Build user context for personalized analysis
+      let userContext = '';
+      if (userProfile) {
+        userContext = `User is a ${userProfile.businessType}.
+        Business: ${userProfile.businessDescription}
+        Known concerns: ${userProfile.legalConcerns}`;
+      }
+
+      // Step 3: Run AI analysis
+      setAnalysisProgress('AI analyzing contract...');
+      const analysis = await analyzeContract(contractText, userContext, false);
+
+      // Step 4: Return results
+      setAnalysisProgress('Analysis complete!');
+      onAnalyze(analysis, contractText);
+
+    } catch (err) {
+      console.error('Analysis failed:', err);
+      setError(err instanceof Error ? err.message : 'Analysis failed. Please try again.');
+      setIsScanning(false);
+    }
   };
 
   // 1. Scanning Animation View
   if (isScanning) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-slate-900 text-white p-6 relative overflow-hidden">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="absolute inset-0 bg-blue-500/10 z-0"
         />
-        
+
         {/* Scanning Effect */}
         <div className="relative w-64 h-80 border-2 border-blue-500/50 rounded-2xl overflow-hidden mb-8 z-10 bg-slate-800/50 backdrop-blur">
            <div className="absolute inset-0 flex items-center justify-center">
              <FileText size={64} className="text-slate-600" />
            </div>
-           <motion.div 
+           <motion.div
              className="absolute top-0 left-0 right-0 h-1 bg-blue-400 shadow-[0_0_15px_rgba(96,165,250,0.8)]"
              animate={{ top: ['0%', '100%', '0%'] }}
              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
            />
            <div className="absolute bottom-4 left-0 right-0 text-center">
-             <p className="text-xs text-blue-300 font-mono">OCR 처리 중...</p>
+             <p className="text-xs text-blue-300 font-mono">{analysisProgress || 'Processing...'}</p>
            </div>
         </div>
 
-        <h2 className="text-2xl font-bold mb-2 z-10">계약서 분석 중</h2>
+        <h2 className="text-2xl font-bold mb-2 z-10">AI Contract Analysis</h2>
         <p className="text-slate-400 text-center z-10 max-w-xs">
-          AI가 주요 위험 요소와 독소 조항을 검토하고 있습니다.
+          {analysisProgress || 'AI is reviewing key risk factors and unfair clauses.'}
         </p>
+
+        {error && (
+          <div className="mt-4 bg-red-500/20 border border-red-500/50 rounded-xl p-4 z-10 max-w-sm">
+            <p className="text-red-300 text-sm text-center">{error}</p>
+            <button
+              onClick={() => { setIsScanning(false); setError(null); }}
+              className="mt-2 w-full py-2 bg-red-500/30 rounded-lg text-red-200 text-sm hover:bg-red-500/40"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
       </div>
     );
   }

@@ -58,9 +58,30 @@ const App: React.FC = () => {
   };
 
   // Called when a new file is uploaded and analyzed
-  const handleNewAnalysisComplete = () => {
-      // In a real app, this would come from the backend response
-      setCurrentAnalysis(MOCK_ANALYSIS_RESULT); 
+  const handleNewAnalysisComplete = (analysis: ContractAnalysis, contractText: string) => {
+      setCurrentAnalysis(analysis);
+
+      // Create a new contract entry with the analysis
+      const newContract: Contract = {
+        id: `analyzed_${Date.now()}`,
+        title: 'Uploaded Contract',
+        type: 'Service',
+        partyName: 'Analysis Result',
+        status: ContractStatus.Reviewing,
+        date: new Date().toISOString().split('T')[0],
+        content: contractText,
+        analysis: analysis,
+        timeline: [
+          {
+            date: new Date().toISOString().split('T')[0],
+            title: 'AI Analysis Completed',
+            completed: true,
+            notes: `Safety Score: ${analysis.score}/100`
+          }
+        ]
+      };
+
+      setContracts(prev => [newContract, ...prev]);
       handleNavigate('REPORT');
   };
 
@@ -109,9 +130,10 @@ const App: React.FC = () => {
       case 'UPLOAD':
       case 'ANALYSIS_LOADING':
         return (
-          <Upload 
+          <Upload
             onAnalyze={handleNewAnalysisComplete}
             onCancel={() => handleNavigate('HOME')}
+            userProfile={userProfile}
           />
         );
       case 'REPORT':
