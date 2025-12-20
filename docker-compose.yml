@@ -1,7 +1,70 @@
 version: '3.8'
 
 services:
-  safecon-frontend:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: safecon-db
+    environment:
+      POSTGRES_USER: safecon
+      POSTGRES_PASSWORD: safecon
+      POSTGRES_DB: safecon
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U safecon"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - safecon-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: safecon-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - safecon-network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: safecon-api
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://safecon:safecon@postgres:5432/safecon
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-this-in-production}
+      - DEBUG=true
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - safecon-network
+
+  # React Frontend
+  frontend:
     build:
       context: .
       dockerfile: Dockerfile
@@ -10,10 +73,17 @@ services:
       - "3000:80"
     environment:
       - NODE_ENV=production
+      - VITE_API_URL=http://localhost:8000
     restart: unless-stopped
+    depends_on:
+      - backend
     networks:
       - safecon-network
 
 networks:
   safecon-network:
     driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

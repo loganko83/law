@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ContractAnalysis, RiskLevel, RiskPoint } from '../types';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -11,6 +12,7 @@ interface ReportProps {
 }
 
 export const Report: React.FC<ReportProps> = ({ analysis, onDone }) => {
+  const { t } = useTranslation();
   const [displayScore, setDisplayScore] = useState(0);
 
   useEffect(() => {
@@ -41,8 +43,8 @@ export const Report: React.FC<ReportProps> = ({ analysis, onDone }) => {
   
   const handleShare = async () => {
       const shareData = {
-          title: '계약서 AI 안전 진단 리포트',
-          text: `SafeContract 분석 결과: 안전 점수 ${analysis.score}점.\n\n요약: ${analysis.summary}`,
+          title: t('report.shareTitle', 'Contract AI Safety Report'),
+          text: `SafeContract ${t('report.analysisResult', 'Analysis Result')}: ${t('report.safetyScore')} ${analysis.score}.\n\n${t('report.summary')}: ${analysis.summary}`,
           url: window.location.href
       };
 
@@ -54,22 +56,22 @@ export const Report: React.FC<ReportProps> = ({ analysis, onDone }) => {
           }
       } else {
           navigator.clipboard.writeText(`${shareData.title}\n\n${shareData.text}`);
-          alert('리포트 내용이 클립보드에 복사되었습니다.');
+          alert(t('report.copiedToClipboard', 'Report copied to clipboard.'));
       }
   };
 
   const handleEmailShare = () => {
-    const subject = encodeURIComponent(`[SafeContract] 계약서 AI 분석 리포트 - ${analysis.score}점`);
+    const subject = encodeURIComponent(`[SafeContract] ${t('report.emailSubject', 'Contract AI Analysis Report')} - ${analysis.score}`);
     const body = encodeURIComponent(
-`SafeContract 계약서 분석 결과입니다.
+`${t('report.emailBody', 'SafeContract Analysis Result')}
 
-안전 점수: ${analysis.score}점
-요약: ${analysis.summary}
+${t('report.safetyScore')}: ${analysis.score}
+${t('report.summary')}: ${analysis.summary}
 
-주요 위험 요소: ${analysis.risks.length}건 발견
+${t('report.risks')}: ${analysis.risks.length} ${t('report.detected')}
 
 --------------------------------------------------
-SafeContract - 프리랜서와 소상공인을 위한 AI 법률 비서
+SafeContract - ${t('app.tagline')}
 `);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
@@ -116,7 +118,7 @@ SafeContract - 프리랜서와 소상공인을 위한 AI 법률 비서
                         />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">안전점수</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t('report.safetyScore')}</span>
                         <div className={`flex items-baseline ${getScoreColor(analysis.score).replace('stroke-', '')}`}>
                              <span className="text-5xl font-extrabold tracking-tighter">{displayScore}</span>
                              <span className="text-lg font-medium text-slate-400 ml-1">/100</span>
@@ -127,10 +129,10 @@ SafeContract - 프리랜서와 소상공인을 위한 AI 법률 비서
             
             <div className="text-center max-w-xs">
                 <h2 className="text-xl font-bold text-slate-800 mb-2">
-                    {analysis.score >= 80 ? '계약서가 안전합니다' : analysis.score >= 60 ? '몇 가지 주의가 필요합니다' : '위험 요소가 발견되었습니다'}
+                    {analysis.score >= 80 ? t('report.safe') : analysis.score >= 60 ? t('report.caution') : t('report.danger')}
                 </h2>
                 <p className="text-sm text-slate-500 leading-relaxed">
-                    AI가 분석한 결과를 바탕으로<br/>계약 체결 전 꼼꼼히 확인해보세요.
+                    {t('report.description')}
                 </p>
             </div>
        </div>
@@ -143,7 +145,7 @@ SafeContract - 프리랜서와 소상공인을 위한 AI 법률 비서
                 transition={{ delay: 0.2 }}
             >
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
-                    <FileText size={16} /> 요약
+                    <FileText size={16} /> {t('report.summary')}
                 </h3>
                 <Card className="bg-white border-slate-200 shadow-sm p-5">
                     <p className="text-slate-700 leading-relaxed text-sm font-medium">
@@ -160,10 +162,10 @@ SafeContract - 프리랜서와 소상공인을 위한 AI 법률 비서
             >
                 <div className="flex justify-between items-end mb-3 px-1">
                     <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                        <ShieldAlert size={16} /> 위험 요소
+                        <ShieldAlert size={16} /> {t('report.risks')}
                     </h3>
                     <span className="text-xs font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-                        {analysis.risks.length}건 감지됨
+                        {analysis.risks.length} {t('report.detected')}
                     </span>
                 </div>
                 
@@ -181,7 +183,7 @@ SafeContract - 프리랜서와 소상공인을 위한 AI 법률 비서
                 transition={{ delay: 0.4 }}
             >
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
-                    <HelpCircle size={16} /> 추천 질문
+                    <HelpCircle size={16} /> {t('report.questions')}
                 </h3>
                 <div className="bg-indigo-50 rounded-2xl p-1 border border-indigo-100">
                     <div className="bg-white/60 rounded-xl p-4 backdrop-blur-sm">
@@ -204,10 +206,10 @@ SafeContract - 프리랜서와 소상공인을 위한 AI 법률 비서
        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 p-4 z-20 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] max-w-md mx-auto">
             <div className="flex gap-3">
                 <Button variant="outline" className="flex-1 border-slate-200" onClick={handleShare}>
-                    <Share2 size={18} /> <span className="ml-2">공유</span>
+                    <Share2 size={18} /> <span className="ml-2">{t('report.share')}</span>
                 </Button>
                 <Button fullWidth onClick={onDone} className="flex-[2]">
-                    확인 완료
+                    {t('report.done')}
                 </Button>
             </div>
        </div>
@@ -246,26 +248,27 @@ const RiskCard: React.FC<{ risk: RiskPoint; index: number }> = ({ risk, index })
 };
 
 const Badge = ({ level }: { level: RiskLevel }) => {
+    const { t } = useTranslation();
     let classes = "";
-    let label = "";
-    
+    let labelKey = "";
+
     switch(level) {
         case RiskLevel.High:
             classes = "bg-rose-100 text-rose-700";
-            label = "위험";
+            labelKey = "report.riskLevels.high";
             break;
         case RiskLevel.Medium:
             classes = "bg-amber-100 text-amber-700";
-            label = "주의";
+            labelKey = "report.riskLevels.medium";
             break;
         default:
             classes = "bg-slate-100 text-slate-600";
-            label = "참고";
+            labelKey = "report.riskLevels.low";
     }
 
     return (
         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase whitespace-nowrap ${classes}`}>
-            {label}
+            {t(labelKey)}
         </span>
     );
 };

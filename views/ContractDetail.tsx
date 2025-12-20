@@ -6,6 +6,7 @@ import { Button } from '../components/Button';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 interface ContractDetailProps {
   contract: Contract;
@@ -16,6 +17,7 @@ interface ContractDetailProps {
 }
 
 export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack, onViewDocument, onViewReport, onStartSign }) => {
+  const { t } = useTranslation();
   const [expandedEvent, setExpandedEvent] = useState<number | null>(null);
   const [events, setEvents] = useState(contract.timeline || []);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
@@ -41,7 +43,7 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
   const handleShare = async () => {
     const shareData = {
       title: contract.title,
-      text: `${contract.title} 계약 검토 중. 상대방: ${contract.partyName}.`,
+      text: `${contract.title} ${t('contract.detail')}. ${t('contract.parties')}: ${contract.partyName}.`,
       url: window.location.href
     };
 
@@ -53,7 +55,7 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
       }
     } else {
       navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}`);
-      alert('계약 정보가 클립보드에 복사되었습니다.');
+      alert(t('report.copiedToClipboard'));
     }
   };
 
@@ -107,7 +109,7 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
       pdf.save(`${cleanTitle}_report.pdf`);
     } catch (e) {
         console.error(e);
-        alert('PDF 생성 중 오류가 발생했습니다.');
+        alert(t('common.error'));
     } finally {
         window.scrollTo(0, originalScrollPos);
         setIsExporting(false);
@@ -120,11 +122,11 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
   
   const getStatusLabel = (status: ContractStatus) => {
       switch (status) {
-          case ContractStatus.Reviewing: return '검토중';
-          case ContractStatus.Active: return '진행중';
-          case ContractStatus.Dispute: return '분쟁';
-          case ContractStatus.Completed: return '완료';
-          default: return '작성중';
+          case ContractStatus.Reviewing: return t('status.reviewing');
+          case ContractStatus.Active: return t('status.active');
+          case ContractStatus.Dispute: return t('status.dispute');
+          case ContractStatus.Completed: return t('status.completed');
+          default: return t('status.draft');
       }
   };
 
@@ -137,14 +139,14 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
 
   const handleDocumentDownload = (docName: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    alert(`'${docName}' 파일을 다운로드합니다.`);
+    alert(t('contract.downloadingFile', { fileName: docName }));
   };
 
   const handleReminder = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const confirmed = window.confirm('상대방에게 계약 관련 알림(문자/이메일)을 전송하시겠습니까?');
+    const confirmed = window.confirm(t('contract.sendNotificationConfirm'));
     if (confirmed) {
-        alert('알림이 전송되었습니다.');
+        alert(t('contract.notificationSent'));
     }
   };
   
@@ -215,18 +217,18 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
             <div className="flex justify-between items-center mb-4">
                 <button onClick={() => changeMonth(-1)} className="p-1 hover:bg-slate-100 rounded-full text-slate-500"><ChevronLeft size={20}/></button>
                 <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-800">{year}년 {month + 1}월</span>
-                    <button 
+                    <span className="font-bold text-slate-800">{year}{t('common.year')} {month + 1}{t('common.month')}</span>
+                    <button
                         onClick={goToToday}
                         className="text-[10px] px-2 py-1 bg-slate-100 rounded-full text-slate-600 font-semibold hover:bg-slate-200 transition-colors"
                     >
-                        오늘
+                        {t('common.today')}
                     </button>
                 </div>
                 <button onClick={() => changeMonth(1)} className="p-1 hover:bg-slate-100 rounded-full text-slate-500"><ChevronRight size={20}/></button>
             </div>
             <div className="grid grid-cols-7 gap-1 mb-2">
-                {['일', '월', '화', '수', '목', '금', '토'].map(day => (
+                {[t('common.sun'), t('common.mon'), t('common.tue'), t('common.wed'), t('common.thu'), t('common.fri'), t('common.sat')].map(day => (
                     <div key={day} className="text-center text-xs text-slate-400 font-medium py-1">{day}</div>
                 ))}
             </div>
@@ -277,17 +279,17 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
           {/* Dropdown Menu */}
           <AnimatePresence>
             {showMenu && (
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     className="absolute top-12 right-0 bg-white rounded-xl shadow-xl border border-slate-100 w-48 z-50 overflow-hidden"
                 >
-                    <button className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2" onClick={() => { setShowMenu(false); alert('계약 정보 수정'); }}>
-                        <FileEditIcon size={16} /> 정보 수정
+                    <button className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2" onClick={() => { setShowMenu(false); alert(t('contract.editInfo')); }}>
+                        <FileEditIcon size={16} /> {t('contract.editInfo')}
                     </button>
-                    <button className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-50" onClick={() => { setShowMenu(false); alert('계약 삭제'); }}>
-                        <X size={16} /> 계약 삭제
+                    <button className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-50" onClick={() => { setShowMenu(false); alert(t('contract.deleteContract')); }}>
+                        <X size={16} /> {t('contract.deleteContract')}
                     </button>
                 </motion.div>
             )}
@@ -302,44 +304,44 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
             <Card className="mb-6 border-l-4 border-l-blue-500">
               <div className="flex justify-between mb-4">
                 <div>
-                  <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">계약 상태</p>
+                  <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">{t('contract.status')}</p>
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${contract.status === ContractStatus.Active ? 'bg-green-500' : 'bg-blue-500'} animate-pulse`}></span>
                     <span className="font-bold text-slate-800">{getStatusLabel(contract.status)}</span>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">계약 상대방</p>
+                  <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">{t('contract.counterparty')}</p>
                   <p className="font-medium text-slate-800">{contract.partyName}</p>
                 </div>
               </div>
               
               {/* DocuSign Action Button - Visible only in Draft/Reviewing */}
               {(contract.status === ContractStatus.Draft || contract.status === ContractStatus.Reviewing) && onStartSign && (
-                  <button 
+                  <button
                       onClick={onStartSign}
                       className="w-full mb-3 bg-[#1e2432] text-white py-3 rounded-lg font-bold text-sm shadow-md shadow-slate-300 hover:bg-[#2c3549] transition-all flex items-center justify-center gap-2"
                       data-html2canvas-ignore="true"
                   >
-                      <PenTool size={16} className="text-[#ffc820]" /> 
-                      <span>DocuSign으로 전자서명 시작</span>
+                      <PenTool size={16} className="text-[#ffc820]" />
+                      <span>{t('contract.startDocuSign')}</span>
                   </button>
               )}
 
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={onViewDocument}
                   className="flex-1 bg-slate-100 text-slate-600 py-2 rounded-lg text-xs font-semibold hover:bg-slate-200 transition"
-                  data-html2canvas-ignore="true" 
+                  data-html2canvas-ignore="true"
                 >
-                  원문 보기
+                  {t('contract.viewOriginal')}
                 </button>
-                <button 
+                <button
                   onClick={() => {
                       if (onViewReport && contract.analysis) {
                           onViewReport(contract.analysis);
                       } else {
-                          alert('리포트 데이터가 없습니다.');
+                          alert(t('contract.noReportData'));
                       }
                   }}
                   className="flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg text-xs font-semibold hover:bg-blue-100 transition flex items-center justify-center gap-1.5"
@@ -348,10 +350,10 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                   {contract.analysis ? (
                       <>
                         <Sparkles size={14} className="text-blue-500" />
-                        <span>AI 리포트 ({contract.analysis.score}점)</span>
+                        <span>{t('contract.aiReport')} ({contract.analysis.score}{t('common.points')})</span>
                       </>
                   ) : (
-                      '리포트 보기'
+                      t('contract.viewReport')
                   )}
                 </button>
               </div>
@@ -359,8 +361,8 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
 
             {/* Contract Content Preview Section */}
             <div className="mb-6">
-              <h3 className="font-bold text-lg text-slate-800 mb-3 px-1">계약서 내용</h3>
-              <div 
+              <h3 className="font-bold text-lg text-slate-800 mb-3 px-1">{t('contract.content')}</h3>
+              <div
                 onClick={onViewDocument}
                 className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm cursor-pointer hover:border-blue-300 transition-colors group relative overflow-hidden"
               >
@@ -368,39 +370,39 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                 <div className="pl-2">
                     <div className="flex items-center gap-2 mb-2">
                         <FileText size={18} className="text-slate-400 group-hover:text-blue-500 transition-colors"/>
-                        <span className="font-bold text-slate-700 text-sm group-hover:text-blue-600">계약서 원문 미리보기</span>
+                        <span className="font-bold text-slate-700 text-sm group-hover:text-blue-600">{t('contract.originalPreview')}</span>
                     </div>
                     <p className="text-sm text-slate-500 line-clamp-3 leading-relaxed font-serif">
-                        {contract.content || "계약서 내용이 없습니다."}
+                        {contract.content || t('contract.noContent')}
                     </p>
                     <div className="mt-3 flex items-center text-xs font-bold text-blue-600">
-                        전체 내용 확인하기 <ChevronRight size={14} />
+                        {t('contract.viewFullContent')} <ChevronRight size={14} />
                     </div>
                 </div>
               </div>
               <div className="mt-3">
                   <Button fullWidth onClick={onViewDocument} variant="outline" className="bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors">
-                      <FileText size={16} /> 계약서 전체 원문 보기
+                      <FileText size={16} /> {t('contract.viewFullOriginal')}
                   </Button>
               </div>
             </div>
 
             {/* Timeline (Core Lifecycle Feature) */}
             <div className="flex justify-between items-center mb-4 px-1">
-              <h3 className="font-bold text-lg text-slate-800">계약 타임라인</h3>
+              <h3 className="font-bold text-lg text-slate-800">{t('contract.timeline')}</h3>
               <div className="flex gap-2 items-center">
                 <div className="bg-slate-100 p-1 rounded-lg flex" data-html2canvas-ignore="true">
-                    <button 
-                        onClick={() => setViewMode('LIST')} 
+                    <button
+                        onClick={() => setViewMode('LIST')}
                         className={`p-1.5 rounded-md transition-colors ${viewMode === 'LIST' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400 hover:text-slate-600'}`}
-                        title="리스트 보기"
+                        title={t('contract.listView')}
                     >
                         <List size={16}/>
                     </button>
-                    <button 
-                        onClick={() => setViewMode('CALENDAR')} 
+                    <button
+                        onClick={() => setViewMode('CALENDAR')}
                         className={`p-1.5 rounded-md transition-colors ${viewMode === 'CALENDAR' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400 hover:text-slate-600'}`}
-                        title="달력 보기"
+                        title={t('contract.calendarView')}
                     >
                         <Calendar size={16}/>
                     </button>
@@ -456,9 +458,9 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                                 >
                                     <div className="bg-slate-50 border border-slate-100 rounded-lg p-3">
                                         <p className="text-xs text-slate-600 mb-3 leading-relaxed">
-                                            {event.completed 
-                                                ? "완료된 단계입니다. 관련 문서가 모두 확인되었습니다."
-                                                : "진행 중인 단계입니다. 기한 내에 조건이 충족되었는지 확인하세요."}
+                                            {event.completed
+                                                ? t('contract.eventCompletedDesc')
+                                                : t('contract.eventInProgressDesc')}
                                         </p>
 
                                         {/* Event Notes */}
@@ -473,7 +475,7 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                                         {event.documents && event.documents.length > 0 && (
                                             <div className="mb-4">
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
-                                                    <FileText size={10} /> 관련 문서
+                                                    <FileText size={10} /> {t('contract.relatedDocuments')}
                                                 </p>
                                                 <div className="space-y-1.5">
                                                     {event.documents.map((doc, i) => (
@@ -482,11 +484,11 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                                                                 <FileText size={14} />
                                                             </div>
                                                             <span className="truncate flex-1 font-medium">{doc}</span>
-                                                            <button 
+                                                            <button
                                                                 onClick={(e) => handleDocumentDownload(doc, e)}
                                                                 className="text-blue-500 text-[10px] font-semibold opacity-0 group-hover/doc:opacity-100 transition-opacity"
                                                             >
-                                                                다운로드
+                                                                {t('common.download')}
                                                             </button>
                                                         </div>
                                                     ))}
@@ -497,21 +499,21 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                                         <div className="flex gap-2" data-html2canvas-ignore="true">
                                             {event.completed ? (
                                                 <button className="flex-1 bg-white text-slate-600 border border-slate-200 py-2 rounded-md text-xs font-semibold hover:bg-slate-50">
-                                                    상세 내역 수정
+                                                    {t('contract.editDetails')}
                                                 </button>
                                             ) : (
                                                 <>
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); alert('알림이 설정되었습니다.'); }}
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); alert(t('contract.reminderSet')); }}
                                                         className="flex-1 bg-white text-slate-600 border border-slate-200 py-2 rounded-md text-xs font-semibold hover:bg-slate-50"
                                                     >
-                                                        <Bell size={12} className="inline mr-1" /> 알림 설정
+                                                        <Bell size={12} className="inline mr-1" /> {t('contract.setReminder')}
                                                     </button>
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); alert('완료 처리되었습니다.'); }}
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); alert(t('contract.markedComplete')); }}
                                                         className="flex-1 bg-blue-600 text-white py-2 rounded-md text-xs font-semibold hover:bg-blue-700 shadow-sm shadow-blue-200"
                                                     >
-                                                        완료 표시
+                                                        {t('contract.markComplete')}
                                                     </button>
                                                 </>
                                             )}
@@ -526,7 +528,7 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                   })
               ) : (
                 <div className="py-8 text-center text-slate-400 text-sm bg-slate-100/50 rounded-lg border border-dashed border-slate-200">
-                    {viewMode === 'CALENDAR' ? '선택한 날짜에 일정이 없습니다.' : '일정이 없습니다.'}
+                    {viewMode === 'CALENDAR' ? t('contract.noEventsOnDate') : t('contract.noEvents')}
                 </div>
               )}
               
@@ -537,16 +539,16 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                        <AlertCircle size={14} />
                      </div>
                      <div className="flex-1 pt-0.5">
-                       <p className="font-bold text-slate-800 text-sm">분쟁 예방 체크</p>
+                       <p className="font-bold text-slate-800 text-sm">{t('contract.disputePreventionCheck')}</p>
                        <p className="text-xs text-slate-500 mt-1">
-                         상대방이 응답하지 않나요?
+                         {t('contract.noResponseFromCounterparty')}
                        </p>
-                       <button 
+                       <button
                          onClick={handleReminder}
                          className="mt-2 text-xs text-orange-600 font-semibold bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100 hover:bg-orange-100 transition-colors"
                          data-html2canvas-ignore="true"
                        >
-                         리마인더 보내기
+                         {t('contract.sendReminder')}
                        </button>
                      </div>
                   </div>
@@ -558,20 +560,20 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                 <div className="mt-8 pt-8 border-t-2 border-slate-200">
                     <h3 className="font-bold text-xl text-slate-900 mb-6 flex items-center gap-2">
                         <Sparkles className="text-blue-600" size={24} />
-                        AI 안전 진단 리포트
+                        {t('report.aiSafetyReport')}
                     </h3>
-                    
+
                     {/* Score */}
                     <div className="bg-slate-50 rounded-xl p-6 mb-6 flex items-center justify-between border border-slate-200">
                         <div>
-                             <p className="text-sm text-slate-500 font-bold uppercase">계약 안전 점수</p>
+                             <p className="text-sm text-slate-500 font-bold uppercase">{t('report.safetyScore')}</p>
                              <div className="flex items-end gap-2">
                                 <span className="text-4xl font-bold text-blue-600">{contract.analysis.score}</span>
                                 <span className="text-lg text-slate-400 mb-1">/ 100</span>
                              </div>
                         </div>
                         <div className="text-right">
-                             <p className="text-sm font-semibold text-slate-700">작성일: {new Date().toLocaleDateString()}</p>
+                             <p className="text-sm font-semibold text-slate-700">{t('report.createdAt')}: {new Date().toLocaleDateString()}</p>
                              <p className="text-xs text-slate-400">SafeContract AI Analysis</p>
                         </div>
                     </div>
@@ -579,7 +581,7 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                     {/* Summary */}
                     <div className="mb-8">
                         <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2 text-lg">
-                            <FileText size={20} className="text-slate-500" /> 요약
+                            <FileText size={20} className="text-slate-500" /> {t('report.summary')}
                         </h4>
                         <div className="bg-white p-4 rounded-xl border border-slate-200 text-slate-700 text-sm leading-relaxed shadow-sm">
                             {contract.analysis.summary}
@@ -589,8 +591,8 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                     {/* Risks */}
                     <div className="mb-8">
                         <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2 text-lg">
-                            <AlertTriangle size={20} className="text-orange-500" /> 
-                            감지된 위험 요소 ({contract.analysis.risks.length})
+                            <AlertTriangle size={20} className="text-orange-500" />
+                            {t('report.detectedRisks')} ({contract.analysis.risks.length})
                         </h4>
                         <div className="space-y-4">
                             {contract.analysis.risks.map(risk => (
@@ -608,8 +610,8 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                     {/* Questions */}
                     <div className="mb-8">
                         <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2 text-lg">
-                            <HelpCircle size={20} className="text-blue-500" /> 
-                            추천 질문 (특약 검토)
+                            <HelpCircle size={20} className="text-blue-500" />
+                            {t('report.suggestedQuestions')}
                         </h4>
                         <div className="bg-blue-50 rounded-xl p-5 border border-blue-100">
                             <ul className="space-y-3">
@@ -627,7 +629,7 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
 
                     <div className="text-center mt-12 pt-6 border-t border-slate-200">
                          <p className="text-xs text-slate-400">
-                            본 리포트는 AI 분석 결과이며 법적 효력이 없습니다. 중요한 계약은 법률 전문가와 상담하세요.
+                            {t('report.disclaimer')}
                         </p>
                         <p className="text-[10px] text-slate-300 mt-1">
                             Generated by SafeContract
@@ -652,25 +654,25 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
               className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl relative z-10"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-lg text-slate-800">새 일정 추가</h3>
+                <h3 className="font-bold text-lg text-slate-800">{t('contract.addNewEvent')}</h3>
                 <button onClick={() => setIsAddEventOpen(false)} className="text-slate-400 hover:text-slate-600">
                     <X size={20} />
                 </button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1.5">일정 이름</label>
+                  <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('contract.eventName')}</label>
                   <input
                     type="text"
                     value={newEvent.title}
                     onChange={e => setNewEvent({...newEvent, title: e.target.value})}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:border-blue-500 focus:bg-white outline-none transition-colors"
-                    placeholder="예: 중도금 지급"
+                    placeholder={t('contract.eventNamePlaceholder')}
                     autoFocus
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1.5">날짜</label>
+                  <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('contract.date')}</label>
                   <input
                     type="date"
                     value={newEvent.date}
@@ -679,12 +681,12 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                   />
                 </div>
                 <div className="pt-2">
-                  <button 
-                    onClick={handleAddEvent} 
+                  <button
+                    onClick={handleAddEvent}
                     disabled={!newEvent.title || !newEvent.date}
                     className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 disabled:shadow-none transition-all"
                   >
-                    추가하기
+                    {t('common.add')}
                   </button>
                 </div>
               </div>

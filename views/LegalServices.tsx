@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Mail, MessageCircle, Scale, ChevronRight, FileText } from 'lucide-react';
 import { Button } from '../components/Button';
 
@@ -7,11 +8,13 @@ interface LegalServicesProps {
 }
 
 export const LegalServices: React.FC<LegalServicesProps> = ({ onNavigate }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="p-6">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">법률 지원 서비스</h1>
-        <p className="text-slate-500 text-sm">복잡한 법률 문제, AI가 도와드립니다.</p>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">{t('legal.title')}</h1>
+        <p className="text-slate-500 text-sm">{t('legal.subtitle', 'AI helps with complex legal matters.')}</p>
       </div>
 
       <div className="space-y-4">
@@ -24,9 +27,9 @@ export const LegalServices: React.FC<LegalServicesProps> = ({ onNavigate }) => {
             <Mail size={28} />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-slate-800 text-lg mb-1">내용증명 작성</h3>
+            <h3 className="font-bold text-slate-800 text-lg mb-1">{t('legal.contentProof')}</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              미수금, 계약 해지 등 의사 표시를 명확히 해야 할 때 법적 효력을 갖는 내용증명을 AI와 함께 작성하세요.
+              {t('legal.contentProofDescription')}
             </p>
           </div>
           <ChevronRight className="text-slate-300 group-hover:text-indigo-500" />
@@ -41,9 +44,9 @@ export const LegalServices: React.FC<LegalServicesProps> = ({ onNavigate }) => {
             <MessageCircle size={28} />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-slate-800 text-lg mb-1">법적 쟁점 분석</h3>
+            <h3 className="font-bold text-slate-800 text-lg mb-1">{t('legal.qa')}</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              현재 겪고 있는 상황을 입력하면 AI가 법적 쟁점과 판례 기반의 대응 방안을 분석해 드립니다.
+              {t('legal.qaDescription')}
             </p>
           </div>
           <ChevronRight className="text-slate-300 group-hover:text-emerald-500" />
@@ -55,9 +58,9 @@ export const LegalServices: React.FC<LegalServicesProps> = ({ onNavigate }) => {
             <Scale size={28} />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-slate-600 text-lg mb-1">변호사 매칭 (준비중)</h3>
+            <h3 className="font-bold text-slate-600 text-lg mb-1">{t('legal.lawyerMatching', 'Attorney Matching (Coming Soon)')}</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              분석된 데이터를 바탕으로 전문 변호사를 연결해 드리는 서비스가 곧 오픈됩니다.
+              {t('legal.lawyerMatchingDesc', 'Connect with specialized lawyers based on your analysis data.')}
             </p>
           </div>
         </div>

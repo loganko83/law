@@ -1,0 +1,192 @@
+{
+  "version": "1.0",
+  "description": "Korean contract risk patterns for AI analysis",
+  "last_updated": "2024-12-20",
+  "categories": [
+    {
+      "id": "payment",
+      "name": "Payment Terms",
+      "name_ko": "대금 지급 조건",
+      "risks": [
+        {
+          "pattern": "Payment due more than 60 days after completion",
+          "pattern_ko": "완료 후 60일 이상 대금 지급",
+          "risk_level": "high",
+          "description": "Extended payment terms over 60 days pose significant cash flow risk for service providers",
+          "description_ko": "60일 이상의 대금 지급 조건은 용역 제공자에게 심각한 현금 흐름 위험을 초래합니다",
+          "suggestion": "Negotiate payment terms to 30 days or less, or request milestone-based payments",
+          "suggestion_ko": "30일 이내로 대금 지급 조건을 협상하거나, 단계별 지급을 요청하세요"
+        },
+        {
+          "pattern": "No advance payment or deposit clause",
+          "pattern_ko": "선급금 또는 계약금 조항 없음",
+          "risk_level": "medium",
+          "description": "Working without upfront payment increases financial risk",
+          "description_ko": "선급금 없이 작업하면 재정적 위험이 증가합니다",
+          "suggestion": "Request 30-50% advance payment before starting work",
+          "suggestion_ko": "작업 시작 전 30-50%의 선급금을 요청하세요"
+        },
+        {
+          "pattern": "Vague payment conditions",
+          "pattern_ko": "모호한 대금 지급 조건",
+          "risk_level": "high",
+          "description": "Unclear payment terms can lead to disputes",
+          "description_ko": "불명확한 대금 지급 조건은 분쟁으로 이어질 수 있습니다",
+          "suggestion": "Specify exact payment amounts, dates, and conditions",
+          "suggestion_ko": "정확한 금액, 날짜, 조건을 명시하세요"
+        }
+      ]
+    },
+    {
+      "id": "intellectual_property",
+      "name": "Intellectual Property",
+      "name_ko": "지식재산권",
+      "risks": [
+        {
+          "pattern": "All IP transferred without compensation",
+          "pattern_ko": "보상 없이 모든 지식재산권 양도",
+          "risk_level": "high",
+          "description": "Transferring all intellectual property rights without additional compensation undervalues creative work",
+          "description_ko": "추가 보상 없이 모든 지식재산권을 양도하면 창작물의 가치가 저평가됩니다",
+          "suggestion": "Negotiate separate IP transfer fees or retain certain usage rights",
+          "suggestion_ko": "별도의 저작권 양도 비용을 협상하거나 일부 사용권을 유지하세요"
+        },
+        {
+          "pattern": "Unlimited usage rights without scope",
+          "pattern_ko": "범위 없는 무제한 사용권",
+          "risk_level": "medium",
+          "description": "Granting unlimited usage rights without defining scope can be exploited",
+          "description_ko": "범위를 정의하지 않고 무제한 사용권을 부여하면 악용될 수 있습니다",
+          "suggestion": "Define specific usage scope, duration, and territory",
+          "suggestion_ko": "구체적인 사용 범위, 기간, 지역을 정의하세요"
+        }
+      ]
+    },
+    {
+      "id": "termination",
+      "name": "Termination Clauses",
+      "name_ko": "해지 조항",
+      "risks": [
+        {
+          "pattern": "Unilateral termination by client without compensation",
+          "pattern_ko": "보상 없는 발주자 일방 해지",
+          "risk_level": "high",
+          "description": "Allowing client to terminate without paying for completed work is unfair",
+          "description_ko": "완료된 작업에 대한 대가 없이 발주자가 해지할 수 있게 하는 것은 불공정합니다",
+          "suggestion": "Include kill fee clause for cancellation after work begins",
+          "suggestion_ko": "작업 시작 후 취소 시 킬피(취소수수료) 조항을 포함시키세요"
+        },
+        {
+          "pattern": "No notice period for termination",
+          "pattern_ko": "해지 사전 통보 기간 없음",
+          "risk_level": "medium",
+          "description": "Immediate termination without notice can cause financial damage",
+          "description_ko": "사전 통보 없는 즉시 해지는 재정적 손해를 야기할 수 있습니다",
+          "suggestion": "Negotiate minimum 14-30 day notice period",
+          "suggestion_ko": "최소 14-30일의 사전 통보 기간을 협상하세요"
+        }
+      ]
+    },
+    {
+      "id": "liability",
+      "name": "Liability and Damages",
+      "name_ko": "책임 및 손해배상",
+      "risks": [
+        {
+          "pattern": "Unlimited liability clause",
+          "pattern_ko": "무제한 책임 조항",
+          "risk_level": "high",
+          "description": "Accepting unlimited liability exposes you to potentially devastating financial claims",
+          "description_ko": "무제한 책임을 수락하면 치명적인 재정적 청구에 노출될 수 있습니다",
+          "suggestion": "Cap liability at contract value or reasonable multiple",
+          "suggestion_ko": "책임을 계약 금액 또는 합리적인 배수로 제한하세요"
+        },
+        {
+          "pattern": "Disproportionate penalty clauses",
+          "pattern_ko": "불균형적인 위약금 조항",
+          "risk_level": "high",
+          "description": "Excessive penalties compared to contract value are unfair",
+          "description_ko": "계약 금액에 비해 과도한 위약금은 불공정합니다",
+          "suggestion": "Negotiate proportionate penalty amounts",
+          "suggestion_ko": "비례적인 위약금 금액을 협상하세요"
+        }
+      ]
+    },
+    {
+      "id": "scope",
+      "name": "Scope of Work",
+      "name_ko": "업무 범위",
+      "risks": [
+        {
+          "pattern": "Vague or undefined deliverables",
+          "pattern_ko": "모호하거나 정의되지 않은 산출물",
+          "risk_level": "high",
+          "description": "Unclear deliverables lead to scope creep and disputes",
+          "description_ko": "불명확한 산출물은 범위 확장과 분쟁으로 이어집니다",
+          "suggestion": "Define specific, measurable deliverables with acceptance criteria",
+          "suggestion_ko": "구체적이고 측정 가능한 산출물과 인수 기준을 정의하세요"
+        },
+        {
+          "pattern": "Unlimited revisions",
+          "pattern_ko": "무제한 수정",
+          "risk_level": "medium",
+          "description": "Allowing unlimited revisions can exponentially increase workload",
+          "description_ko": "무제한 수정을 허용하면 작업량이 기하급수적으로 증가할 수 있습니다",
+          "suggestion": "Specify number of revision rounds included in contract price",
+          "suggestion_ko": "계약 금액에 포함된 수정 횟수를 명시하세요"
+        }
+      ]
+    },
+    {
+      "id": "non_compete",
+      "name": "Non-Compete and Exclusivity",
+      "name_ko": "경업금지 및 독점",
+      "risks": [
+        {
+          "pattern": "Overly broad non-compete clause",
+          "pattern_ko": "지나치게 광범위한 경업금지 조항",
+          "risk_level": "high",
+          "description": "Broad non-compete clauses can severely limit your ability to work",
+          "description_ko": "광범위한 경업금지 조항은 귀하의 업무 능력을 심각하게 제한할 수 있습니다",
+          "suggestion": "Limit non-compete to specific projects or clients, not entire industries",
+          "suggestion_ko": "경업금지를 전체 산업이 아닌 특정 프로젝트나 고객으로 제한하세요"
+        },
+        {
+          "pattern": "Extended non-compete duration",
+          "pattern_ko": "연장된 경업금지 기간",
+          "risk_level": "medium",
+          "description": "Non-compete periods over 1 year are often excessive for freelancers",
+          "description_ko": "1년 이상의 경업금지 기간은 프리랜서에게 과도한 경우가 많습니다",
+          "suggestion": "Negotiate non-compete duration to 6 months or less",
+          "suggestion_ko": "경업금지 기간을 6개월 이하로 협상하세요"
+        }
+      ]
+    }
+  ],
+  "red_flag_keywords": {
+    "ko": [
+      "무제한 책임",
+      "일방 해지",
+      "즉시 해지",
+      "손해배상",
+      "위약금",
+      "경업금지",
+      "영업비밀",
+      "포기",
+      "양도",
+      "무조건"
+    ],
+    "en": [
+      "unlimited liability",
+      "unilateral termination",
+      "immediate termination",
+      "damages",
+      "penalty",
+      "non-compete",
+      "trade secret",
+      "waive",
+      "assign",
+      "unconditional"
+    ]
+  }
+}

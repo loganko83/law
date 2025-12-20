@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User, Settings, CreditCard, LogOut, Shield, Mail, Phone, ChevronRight, FileClock, History, Edit2, Calendar, X, Check, Trash2, Plus, Smartphone, Database, Brain } from 'lucide-react';
 import { Contract, UserProfile } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 interface ProfileProps {
   userProfile: UserProfile;
@@ -18,6 +19,8 @@ const HISTORY_CONTRACTS: Partial<Contract>[] = [
 ];
 
 export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, onBack }) => {
+  const { t } = useTranslation();
+
   // Payment State
   const [savedCards, setSavedCards] = useState([
       { id: 'c1', name: '신한카드', number: '1234', color: 'bg-blue-600' },
@@ -33,10 +36,10 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
 
   // Categories for stats
   const categories = [
-      { id: 'Employment', label: '근로 계약', count: HISTORY_CONTRACTS.filter(c => c.type === 'Employment').length },
-      { id: 'Rental', label: '임대차 계약', count: HISTORY_CONTRACTS.filter(c => c.type === 'Rental').length },
-      { id: 'Sales', label: '매매 계약', count: HISTORY_CONTRACTS.filter(c => c.type === 'Sales').length },
-      { id: 'Freelance', label: '용역/기타', count: HISTORY_CONTRACTS.filter(c => c.type === 'Freelance').length },
+      { id: 'Employment', label: t('contractTypes.Employment'), count: HISTORY_CONTRACTS.filter(c => c.type === 'Employment').length },
+      { id: 'Rental', label: t('contractTypes.Rental'), count: HISTORY_CONTRACTS.filter(c => c.type === 'Rental').length },
+      { id: 'Sales', label: t('contractTypes.Sales'), count: HISTORY_CONTRACTS.filter(c => c.type === 'Sales').length },
+      { id: 'Freelance', label: t('contractTypes.Freelance'), count: HISTORY_CONTRACTS.filter(c => c.type === 'Freelance').length },
   ];
 
   const handleSaveProfile = () => {
@@ -49,7 +52,7 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
       const last4 = newCard.number.slice(-4) || '0000';
       setSavedCards([...savedCards, {
           id: `c_${Date.now()}`,
-          name: '새 카드',
+          name: t('profile.newCard'),
           number: last4,
           color: 'bg-indigo-600'
       }]);
@@ -58,7 +61,7 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
   };
 
   const handleDeleteCard = (id: string) => {
-      if (confirm('이 결제 수단을 삭제하시겠습니까?')) {
+      if (confirm(t('profile.deletePaymentConfirm'))) {
           setSavedCards(savedCards.filter(c => c.id !== id));
       }
   };
@@ -88,12 +91,12 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
 
          <div className="flex gap-3 w-full max-w-xs">
             <div className="flex-1 bg-slate-50 rounded-xl p-3 flex flex-col items-center justify-center border border-slate-100">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">가입일</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">{t('profile.joinDate')}</span>
                 <span className="text-sm font-semibold text-slate-700">2023.01.15</span>
             </div>
             <div className="flex-1 bg-slate-50 rounded-xl p-3 flex flex-col items-center justify-center border border-slate-100">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">총 계약</span>
-                <span className="text-sm font-semibold text-slate-700">{HISTORY_CONTRACTS.length}건</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">{t('profile.totalContracts')}</span>
+                <span className="text-sm font-semibold text-slate-700">{t('profile.contractsCount', { count: HISTORY_CONTRACTS.length })}</span>
             </div>
          </div>
       </div>
@@ -107,40 +110,40 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
             <div className="flex justify-between items-start mb-4 relative z-10">
                 <div>
                     <p className="text-indigo-600 text-xs font-bold uppercase mb-1 flex items-center gap-1">
-                        <Database size={12} /> AI Knowledge Base
+                        <Database size={12} /> {t('profile.aiKnowledgeBase')}
                     </p>
-                    <h3 className="text-xl font-bold text-slate-800">나의 법률 DNA</h3>
+                    <h3 className="text-xl font-bold text-slate-800">{t('profile.legalDna')}</h3>
                 </div>
-                <button 
+                <button
                     onClick={() => { setEditForm(userProfile); setEditProfileOpen(true); }}
                     className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-100 transition-colors"
                 >
-                    정보 업데이트
+                    {t('profile.updateInfo')}
                 </button>
             </div>
             <div className="space-y-3 relative z-10">
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">업종 / 직무</p>
-                    <p className="text-sm font-semibold text-slate-800">{userProfile.businessType || '미입력'}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t('profile.industryJob')}</p>
+                    <p className="text-sm font-semibold text-slate-800">{userProfile.businessType || t('profile.notEntered')}</p>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">사업/업무 설명</p>
-                    <p className="text-sm text-slate-600 line-clamp-2">{userProfile.businessDescription || '내용을 입력하면 AI가 더 정확하게 분석합니다.'}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t('profile.businessDescriptionLabel')}</p>
+                    <p className="text-sm text-slate-600 line-clamp-2">{userProfile.businessDescription || t('profile.businessDescriptionPlaceholder')}</p>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">주요 법적 관심사</p>
-                    <p className="text-sm text-slate-600 line-clamp-2">{userProfile.legalConcerns || '특별히 주의하고 싶은 점을 적어주세요.'}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t('profile.legalConcernsLabel')}</p>
+                    <p className="text-sm text-slate-600 line-clamp-2">{userProfile.legalConcerns || t('profile.legalConcernsPlaceholder')}</p>
                 </div>
             </div>
             <p className="text-[10px] text-indigo-400 mt-3 flex items-center gap-1">
-                <Check size={10} /> 이 정보는 모든 AI 분석 및 상담에 자동 적용됩니다.
+                <Check size={10} /> {t('profile.aiAutoApply')}
             </p>
         </div>
         
         {/* Contract History Section */}
         <div>
             <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
-                <History size={16} className="text-blue-600" /> 나의 계약 히스토리
+                <History size={16} className="text-blue-600" /> {t('profile.contractHistory')}
             </h3>
             
             <div className="grid grid-cols-2 gap-3 mb-4">
@@ -154,8 +157,8 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
             
             <div className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
                 <div className="p-3 border-b border-slate-100 bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wide flex justify-between items-center">
-                    <span>최근 기록</span>
-                    <button className="text-blue-600 hover:text-blue-700">전체보기</button>
+                    <span>{t('profile.recentRecords')}</span>
+                    <button className="text-blue-600 hover:text-blue-700">{t('profile.viewAll')}</button>
                 </div>
                 {HISTORY_CONTRACTS.map((contract) => (
                     <div key={contract.id} className="p-4 border-b border-slate-50 last:border-none hover:bg-slate-50 transition-colors flex justify-between items-center cursor-pointer group">
@@ -181,26 +184,26 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
 
         {/* Settings Menu */}
         <div className="space-y-2 pt-2">
-            <h3 className="font-bold text-slate-800 text-sm mb-2 px-1">계정 설정</h3>
-            <MenuItem 
-                icon={<User size={18} />} 
-                label="개인 정보 및 법률 DNA 수정" 
+            <h3 className="font-bold text-slate-800 text-sm mb-2 px-1">{t('profile.accountSettings')}</h3>
+            <MenuItem
+                icon={<User size={18} />}
+                label={t('profile.editPersonalInfo')}
                 onClick={() => { setEditForm(userProfile); setEditProfileOpen(true); }}
             />
-            <MenuItem 
-                icon={<CreditCard size={18} />} 
-                label="결제 수단 관리" 
+            <MenuItem
+                icon={<CreditCard size={18} />}
+                label={t('profile.paymentManagement')}
                 onClick={() => { setIsAddingCard(false); setPaymentModalOpen(true); }}
             />
-            <MenuItem icon={<Settings size={18} />} label="앱 설정" />
+            <MenuItem icon={<Settings size={18} />} label={t('profile.appSettings')} />
         </div>
 
         <div className="pt-4">
-            <button 
+            <button
                 onClick={onBack}
                 className="w-full py-3.5 text-red-500 font-semibold text-sm flex items-center justify-center gap-2 rounded-xl bg-red-50 hover:bg-red-100 transition-colors"
             >
-                <LogOut size={18} /> 로그아웃
+                <LogOut size={18} /> {t('profile.logout')}
             </button>
         </div>
       </div>
@@ -219,16 +222,16 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
                     className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl relative z-10 max-h-[90vh] overflow-y-auto"
                 >
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="font-bold text-lg text-slate-800">정보 수정</h3>
+                        <h3 className="font-bold text-lg text-slate-800">{t('profile.editInfo')}</h3>
                         <button onClick={() => setEditProfileOpen(false)} className="text-slate-400 hover:text-slate-600">
                             <X size={20} />
                         </button>
                     </div>
 
                     <div className="space-y-4">
-                        <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-wider border-b border-indigo-100 pb-2 mb-2">기본 정보</h4>
+                        <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-wider border-b border-indigo-100 pb-2 mb-2">{t('profile.basicInfo')}</h4>
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1.5">이름</label>
+                            <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('profile.nameLabel')}</label>
                             <input 
                                 type="text" 
                                 value={editForm.name}
@@ -237,67 +240,67 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1.5">이메일</label>
-                            <input 
-                                type="email" 
+                            <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('profile.emailLabel')}</label>
+                            <input
+                                type="email"
                                 value={editForm.email}
                                 onChange={(e) => setEditForm({...editForm, email: e.target.value})}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-3 text-sm focus:border-indigo-500 outline-none"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1.5">전화번호</label>
-                            <input 
-                                type="tel" 
+                            <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('profile.phoneLabel')}</label>
+                            <input
+                                type="tel"
                                 value={editForm.phone}
                                 onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-3 text-sm focus:border-indigo-500 outline-none"
-                                placeholder="010-0000-0000"
+                                placeholder={t('profile.phonePlaceholder')}
                             />
                         </div>
 
                         <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-wider border-b border-indigo-100 pb-2 mb-2 mt-6 flex items-center gap-1">
-                            <Database size={12} /> AI Knowledge Base (법률 DNA)
+                            <Database size={12} /> {t('profile.aiKnowledgeBaseDna')}
                         </h4>
                         <div className="bg-indigo-50 p-3 rounded-lg mb-2 text-[10px] text-indigo-700 leading-relaxed">
-                            이곳에 입력된 정보는 AI가 계약서를 분석하거나 법률 문서를 작성할 때 <strong>자동으로 참조</strong>됩니다.
+                            {t('profile.aiContextDescription')}
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1.5">업종 / 직무</label>
-                            <input 
-                                type="text" 
+                            <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('profile.industryJobLabel')}</label>
+                            <input
+                                type="text"
                                 value={editForm.businessType}
                                 onChange={(e) => setEditForm({...editForm, businessType: e.target.value})}
-                                placeholder="예: 프리랜서 디자이너, 카페 사장님"
+                                placeholder={t('profile.industryJobPlaceholder')}
                                 className="w-full bg-white border border-slate-300 rounded-xl py-3 px-3 text-sm focus:border-indigo-500 outline-none"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1.5">사업/업무 설명</label>
-                            <textarea 
+                            <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('profile.businessDescriptionInputLabel')}</label>
+                            <textarea
                                 value={editForm.businessDescription}
                                 onChange={(e) => setEditForm({...editForm, businessDescription: e.target.value})}
-                                placeholder="어떤 일을 하시는지 구체적으로 적어주세요. (예: 로고 및 브랜드 디자인 작업을 주로 하며, 선입금 50%를 원칙으로 합니다.)"
+                                placeholder={t('profile.businessDescriptionInputPlaceholder')}
                                 className="w-full bg-white border border-slate-300 rounded-xl py-3 px-3 text-sm focus:border-indigo-500 outline-none h-24 resize-none"
                             />
                         </div>
                          <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1.5">주요 법적 우려 사항</label>
-                            <textarea 
+                            <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('profile.legalConcernsInputLabel')}</label>
+                            <textarea
                                 value={editForm.legalConcerns}
                                 onChange={(e) => setEditForm({...editForm, legalConcerns: e.target.value})}
-                                placeholder="예: 디자인 시안의 무단 사용, 잔금 입금 지연 등"
+                                placeholder={t('profile.legalConcernsInputPlaceholder')}
                                 className="w-full bg-white border border-slate-300 rounded-xl py-3 px-3 text-sm focus:border-indigo-500 outline-none h-20 resize-none"
                             />
                         </div>
-                        
+
                         <div className="pt-4">
-                            <button 
+                            <button
                                 onClick={handleSaveProfile}
                                 className="w-full bg-slate-800 text-white py-3.5 rounded-xl font-bold text-sm hover:bg-slate-900 transition-colors shadow-lg shadow-slate-200"
                             >
-                                저장 및 AI 업데이트
+                                {t('profile.saveAndUpdateAi')}
                             </button>
                         </div>
                     </div>
@@ -321,7 +324,7 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
                 >
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="font-bold text-lg text-slate-800">
-                            {isAddingCard ? '새 카드 추가' : '결제 수단 관리'}
+                            {isAddingCard ? t('profile.addNewCard') : t('profile.paymentManagement')}
                         </h3>
                         <button onClick={() => setPaymentModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                             <X size={20} />
@@ -350,15 +353,15 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
                                 ))
                             ) : (
                                 <div className="text-center py-8 text-slate-400 text-sm">
-                                    등록된 결제 수단이 없습니다.
+                                    {t('profile.noPaymentMethods')}
                                 </div>
                             )}
 
-                            <button 
+                            <button
                                 onClick={() => setIsAddingCard(true)}
                                 className="w-full py-3 rounded-xl border-2 border-dashed border-slate-200 text-slate-500 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-slate-50 hover:border-slate-300 transition-all"
                             >
-                                <Plus size={18} /> 새 카드 등록하기
+                                <Plus size={18} /> {t('profile.registerNewCard')}
                             </button>
                         </div>
                     ) : (
@@ -368,46 +371,46 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
                                     <div className="absolute top-1 left-0 right-0 h-1.5 bg-blue-300/50"></div>
                                 </div>
                                 <p className="text-xs text-blue-700 leading-tight">
-                                    안전한 결제를 위해 카드 정보는 암호화되어 저장됩니다.
+                                    {t('profile.securePaymentNotice')}
                                 </p>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 mb-1.5">카드 번호</label>
+                                <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('profile.cardNumber')}</label>
                                 <div className="relative">
                                     <CreditCard className="absolute left-3 top-3 text-slate-400" size={18} />
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        type="text"
                                         value={newCard.number}
                                         onChange={(e) => setNewCard({...newCard, number: e.target.value})}
-                                        placeholder="0000 0000 0000 0000" 
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-3 text-sm focus:border-blue-500 outline-none transition-colors" 
+                                        placeholder={t('profile.cardNumberPlaceholder')}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-3 text-sm focus:border-blue-500 outline-none transition-colors"
                                     />
                                 </div>
                             </div>
                             <div className="flex gap-3">
                                 <div className="flex-1">
-                                    <label className="block text-xs font-bold text-slate-500 mb-1.5">유효기간</label>
-                                    <input type="text" placeholder="MM/YY" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:border-blue-500 outline-none text-center transition-colors" />
+                                    <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('profile.expiryDate')}</label>
+                                    <input type="text" placeholder={t('profile.expiryDatePlaceholder')} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:border-blue-500 outline-none text-center transition-colors" />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-xs font-bold text-slate-500 mb-1.5">CVC</label>
-                                    <input type="password" placeholder="123" maxLength={3} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:border-blue-500 outline-none text-center transition-colors" />
+                                    <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('profile.cvc')}</label>
+                                    <input type="password" placeholder={t('profile.cvcPlaceholder')} maxLength={3} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:border-blue-500 outline-none text-center transition-colors" />
                                 </div>
                             </div>
                             
                             <div className="pt-2 flex gap-3">
-                                <button 
+                                <button
                                     onClick={() => setIsAddingCard(false)}
                                     className="flex-1 bg-white border border-slate-200 text-slate-600 py-3.5 rounded-xl font-bold text-sm hover:bg-slate-50 transition-colors"
                                 >
-                                    취소
+                                    {t('common.cancel')}
                                 </button>
-                                <button 
-                                    onClick={handleAddCard} 
+                                <button
+                                    onClick={handleAddCard}
                                     className="flex-[2] bg-blue-600 text-white py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                                 >
-                                    <Check size={18} /> 카드 등록 완료
+                                    <Check size={18} /> {t('profile.completeCardRegistration')}
                                 </button>
                             </div>
                         </div>

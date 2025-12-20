@@ -3,6 +3,7 @@ import { Contract, RiskLevel, ContractAnalysis, UserProfile } from '../types';
 import { ChevronLeft, AlertTriangle, X, Search, List, ArrowUp, ArrowDown, Copy, Check, HelpCircle, Sparkles, RefreshCw, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleGenAI, Type } from "@google/genai";
+import { useTranslation } from 'react-i18next';
 
 interface DocumentViewProps {
   contract: Contract;
@@ -17,6 +18,7 @@ interface Clause {
 }
 
 export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfile, onBack }) => {
+  const { t } = useTranslation();
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [showClauses, setShowClauses] = useState(false);
   
@@ -184,7 +186,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
         }
     } catch (error) {
         console.error("Analysis failed:", error);
-        alert("분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+        alert(t('document.analysisError'));
     } finally {
         setIsAnalyzing(false);
     }
@@ -196,7 +198,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
         return (
             <div className="flex flex-col items-center justify-center h-64 text-slate-400">
                 <Search size={48} className="mb-4 opacity-20" />
-                <p>문서 내용이 없습니다.</p>
+                <p>{t('document.noContent')}</p>
             </div>
         );
     }
@@ -261,9 +263,9 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
 
   const getRiskLabel = (level: RiskLevel) => {
       switch(level) {
-          case RiskLevel.High: return "위험";
-          case RiskLevel.Medium: return "주의";
-          case RiskLevel.Low: return "양호";
+          case RiskLevel.High: return t('risk.high');
+          case RiskLevel.Medium: return t('risk.medium');
+          case RiskLevel.Low: return t('risk.low');
           default: return level;
       }
   };
@@ -309,40 +311,40 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
             <h2 className="font-bold text-slate-800 text-sm truncate max-w-[150px] sm:max-w-md">
               {contract.title}
             </h2>
-            <span className="text-[10px] text-slate-400">문서 뷰어</span>
+            <span className="text-[10px] text-slate-400">{t('document.viewer')}</span>
           </div>
           <div className="flex gap-1">
-             <button 
+             <button
                onClick={() => {
                    setShowClauses(!showClauses);
                    setShowAnalysis(false);
                }}
                className={`relative p-2 rounded-full transition-colors ${showClauses ? 'bg-slate-100 text-slate-900' : 'hover:bg-slate-50 text-slate-500'}`}
-               title="목차"
+               title={t('document.tableOfContents')}
             >
               <List size={20} />
               {clauses.length > 0 && (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full border border-white"></span>
               )}
             </button>
-            <button 
+            <button
                onClick={() => {
                  setIsSearchOpen(!isSearchOpen);
                  if (isSearchOpen) setSearchQuery('');
                  setShowClauses(false);
                }}
                className={`p-2 rounded-full transition-colors ${isSearchOpen ? 'bg-slate-100 text-slate-900' : 'hover:bg-slate-50 text-slate-500'}`}
-               title="검색"
+               title={t('common.search')}
             >
               <Search size={20} />
             </button>
-            <button 
+            <button
                onClick={() => {
                    setShowAnalysis(!showAnalysis);
                    setShowClauses(false);
                }}
                className={`p-2 rounded-full transition-colors ${showAnalysis ? 'bg-blue-100 text-blue-600' : 'hover:bg-slate-50 text-slate-500'}`}
-               title="AI 분석"
+               title={t('document.aiAnalysis')}
             >
               <Sparkles size={20} />
             </button>
@@ -361,10 +363,10 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
               <div className="px-4 pb-3 flex items-center gap-2">
                 <div className="flex-1 bg-slate-100 rounded-lg flex items-center px-3 py-2 text-sm">
                     <Search size={14} className="text-slate-400 mr-2" />
-                    <input 
+                    <input
                         ref={searchInputRef}
-                        type="text" 
-                        placeholder="단어 또는 조항 검색..." 
+                        type="text"
+                        placeholder={t('document.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleNextMatch()}
@@ -414,7 +416,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
                     className="absolute top-4 right-4 max-h-[60%] w-64 bg-white/95 backdrop-blur shadow-xl border border-slate-100 rounded-xl z-30 flex flex-col overflow-hidden"
                 >
                     <div className="p-3 bg-slate-50 border-b border-slate-100 font-bold text-xs text-slate-500 uppercase tracking-wide flex justify-between items-center">
-                        <span>목차 (조항 바로가기)</span>
+                        <span>{t('document.tableOfContentsJump')}</span>
                         <button onClick={() => setShowClauses(false)}><X size={14}/></button>
                     </div>
                     <div className="overflow-y-auto p-2">
@@ -431,7 +433,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
                             ))
                         ) : (
                             <div className="p-4 text-center text-xs text-slate-400">
-                                감지된 조항이 없습니다.
+                                {t('document.noClausesDetected')}
                             </div>
                         )}
                     </div>
@@ -456,7 +458,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span>
                 </span>
               </div>
-              <span className="font-bold text-sm">AI 분석 보기</span>
+              <span className="font-bold text-sm">{t('document.viewAiAnalysis')}</span>
             </motion.button>
           )}
           {!showAnalysis && !analysisData && !showClauses && contract.content && (
@@ -468,7 +470,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
                 className="absolute bottom-6 right-6 z-30 bg-blue-600 text-white pl-4 pr-5 py-3 rounded-full shadow-xl shadow-blue-300 flex items-center gap-2 hover:bg-blue-700 active:scale-95 transition-all"
               >
                   <Sparkles size={20} className="text-yellow-300" />
-                  <span className="font-bold text-sm">AI 상세 분석</span>
+                  <span className="font-bold text-sm">{t('document.aiDetailedAnalysis')}</span>
               </motion.button>
           )}
         </AnimatePresence>
@@ -497,7 +499,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
                 <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                   <h3 className="font-bold text-slate-800 flex items-center gap-2">
                     <AlertTriangle size={18} className="text-orange-500" />
-                    AI 분석 리포트
+                    {t('document.aiAnalysisReport')}
                   </h3>
                   <button onClick={() => setShowAnalysis(false)} className="p-1 hover:bg-slate-200 rounded-full text-slate-500">
                     <X size={20} />
@@ -509,36 +511,36 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
                      <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 mb-2">
                         <div className="flex items-center gap-2 mb-1">
                              <User size={12} className="text-indigo-600" />
-                             <span className="text-[10px] font-bold text-indigo-600 uppercase">맞춤형 분석 적용됨</span>
+                             <span className="text-[10px] font-bold text-indigo-600 uppercase">{t('document.customAnalysisApplied')}</span>
                         </div>
                         <p className="text-xs text-indigo-800 leading-tight">
-                            사용자의 직무({userProfile.businessType})와 법적 관심사를 반영하여 위험 요소를 분석했습니다.
+                            {t('document.customAnalysisDesc', { businessType: userProfile.businessType })}
                         </p>
                      </div>
                   )}
 
                   {isAnalyzing ? (
                       <div className="flex flex-col items-center justify-center py-20">
-                          <motion.div 
+                          <motion.div
                             animate={{ rotate: 360 }}
                             transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
                             className="text-blue-500 mb-4"
                           >
                               <RefreshCw size={32} />
                           </motion.div>
-                          <p className="text-slate-600 font-medium">계약서 분석 중...</p>
-                          <p className="text-xs text-slate-400 mt-1">사용자 정보를 바탕으로 RAG 분석을 수행합니다.</p>
+                          <p className="text-slate-600 font-medium">{t('document.analyzingContract')}</p>
+                          <p className="text-xs text-slate-400 mt-1">{t('document.ragAnalysisInProgress')}</p>
                       </div>
                   ) : analysisData ? (
                     <>
                       {/* Summary Section */}
                       <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 relative">
                         <div className="flex justify-between items-center mb-2">
-                            <p className="text-xs font-bold text-blue-600 uppercase">요약</p>
-                            <button 
+                            <p className="text-xs font-bold text-blue-600 uppercase">{t('report.summary')}</p>
+                            <button
                                 onClick={handleCopySummary}
                                 className="p-1 -mr-1 rounded-md text-blue-400 hover:text-blue-600 hover:bg-blue-100 transition-colors"
-                                title="요약 복사"
+                                title={t('document.copySummary')}
                             >
                                 {isCopied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
                             </button>
@@ -549,7 +551,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
                       {/* Risks Section */}
                       <div>
                         <p className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wide flex items-center gap-1">
-                            <AlertTriangle size={12} /> 감지된 위험 요소
+                            <AlertTriangle size={12} /> {t('report.detectedRisks')}
                         </p>
                         <div className="space-y-3">
                           {analysisData.risks.map(risk => (
@@ -560,12 +562,12 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
                               </div>
                               <p className="text-xs text-slate-500 mt-1 mb-2">{risk.description}</p>
                               
-                              <button 
+                              <button
                                 onClick={() => searchForContext(risk.title)}
                                 className="w-full mt-1 py-1.5 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md flex items-center justify-center gap-1.5 text-xs font-medium text-slate-600 transition-colors group"
                               >
                                 <Search size={12} className="text-slate-400 group-hover:text-blue-500" />
-                                관련 조항 찾기
+                                {t('document.findRelatedClause')}
                               </button>
                             </div>
                           ))}
@@ -576,7 +578,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
                       {analysisData.questions && analysisData.questions.length > 0 && (
                         <div>
                             <p className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wide flex items-center gap-1">
-                                <HelpCircle size={12} /> 추천 질문 (특약 검토)
+                                <HelpCircle size={12} /> {t('report.suggestedQuestions')}
                             </p>
                             <div className="space-y-3">
                                 {analysisData.questions.map((q, i) => (
@@ -585,12 +587,12 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
                                             <span className="w-5 h-5 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">{i+1}</span>
                                             <p className="text-sm text-slate-700 font-medium leading-relaxed">{q}</p>
                                         </div>
-                                        <button 
+                                        <button
                                             onClick={() => searchForContext(q)}
                                             className="w-full py-1.5 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md flex items-center justify-center gap-1.5 text-xs font-medium text-slate-600 transition-colors group"
                                         >
                                             <Search size={12} className="text-slate-400 group-hover:text-blue-500" />
-                                            관련 내용 검색
+                                            {t('document.searchRelatedContent')}
                                         </button>
                                     </div>
                                 ))}
@@ -600,23 +602,23 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
                       
                       {/* Re-analyze Button */}
                        <div className="pt-4 mt-4 border-t border-slate-100">
-                          <button 
+                          <button
                             onClick={handleAnalyzeContract}
                             className="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
                           >
-                             <RefreshCw size={16} /> 분석 다시 실행하기
+                             <RefreshCw size={16} /> {t('document.rerunAnalysis')}
                           </button>
                        </div>
                     </>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-10 text-slate-400">
                         <Sparkles size={40} className="mb-4 text-slate-200" />
-                        <p className="mb-4">분석 데이터가 없습니다.</p>
-                        <button 
+                        <p className="mb-4">{t('document.noAnalysisData')}</p>
+                        <button
                             onClick={handleAnalyzeContract}
                             className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-lg shadow-blue-200 transition-all active:scale-95 flex items-center gap-2"
                         >
-                            <Sparkles size={16} /> 상세 분석 시작하기
+                            <Sparkles size={16} /> {t('document.startDetailedAnalysis')}
                         </button>
                     </div>
                   )}

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../components/Button';
 import { Camera, Upload as UploadIcon, FileText, X, ChevronLeft, ScanLine, AlertTriangle, RefreshCw, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,6 +13,7 @@ interface UploadProps {
 }
 
 export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile }) => {
+  const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState<string>('');
@@ -54,7 +56,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
       setIsCameraOpen(true);
     } catch (err) {
       console.error("Error accessing camera:", err);
-      alert("카메라에 접근할 수 없습니다. 권한을 확인해주세요.");
+      alert(t('upload.cameraError', 'Cannot access camera. Please check permissions.'));
     }
   };
 
@@ -120,11 +122,11 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
     if (!file) return;
     setIsScanning(true);
     setError(null);
-    setAnalysisProgress('Preparing document...');
+    setAnalysisProgress(t('upload.processing'));
 
     try {
       // Step 1: Extract text from file
-      setAnalysisProgress('Extracting text from document...');
+      setAnalysisProgress(t('upload.extractingText'));
       let contractText = '';
 
       if (file.type.startsWith('text/') || file.name.endsWith('.txt')) {
@@ -133,7 +135,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
       } else if (file.type === 'application/pdf') {
         // For PDF, we'll use a simplified text extraction
         // In production, use pdf.js or server-side extraction
-        setAnalysisProgress('Processing PDF (text extraction)...');
+        setAnalysisProgress(t('upload.processingPdf', 'Processing PDF...'));
         // Placeholder: read as text for demo
         contractText = await file.text().catch(() => '');
         if (!contractText) {
@@ -144,7 +146,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
         }
       } else if (file.type.startsWith('image/')) {
         // For images, we would use OCR
-        setAnalysisProgress('Image detected - OCR processing...');
+        setAnalysisProgress(t('upload.processingImage', 'Processing image...'));
         // Placeholder for OCR
         contractText = `Image contract from: ${file.name}.
         In production, this would be processed with Tesseract.js OCR.
@@ -155,7 +157,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
       }
 
       if (!contractText || contractText.length < 50) {
-        throw new Error('Could not extract sufficient text from the document. Please try a different file format.');
+        throw new Error(t('upload.extractionError', 'Could not extract sufficient text from the document. Please try a different file format.'));
       }
 
       // Step 2: Build user context for personalized analysis
@@ -167,16 +169,16 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
       }
 
       // Step 3: Run AI analysis
-      setAnalysisProgress('AI analyzing contract...');
+      setAnalysisProgress(t('upload.aiAnalyzing'));
       const analysis = await analyzeContract(contractText, userContext, false);
 
       // Step 4: Return results
-      setAnalysisProgress('Analysis complete!');
+      setAnalysisProgress(t('upload.complete'));
       onAnalyze(analysis, contractText);
 
     } catch (err) {
       console.error('Analysis failed:', err);
-      setError(err instanceof Error ? err.message : 'Analysis failed. Please try again.');
+      setError(err instanceof Error ? err.message : t('upload.analysisError', 'Analysis failed. Please try again.'));
       setIsScanning(false);
     }
   };
@@ -202,13 +204,13 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
            />
            <div className="absolute bottom-4 left-0 right-0 text-center">
-             <p className="text-xs text-blue-300 font-mono">{analysisProgress || 'Processing...'}</p>
+             <p className="text-xs text-blue-300 font-mono">{analysisProgress || t('upload.processing')}</p>
            </div>
         </div>
 
-        <h2 className="text-2xl font-bold mb-2 z-10">AI Contract Analysis</h2>
+        <h2 className="text-2xl font-bold mb-2 z-10">{t('upload.analyzing')}</h2>
         <p className="text-slate-400 text-center z-10 max-w-xs">
-          {analysisProgress || 'AI is reviewing key risk factors and unfair clauses.'}
+          {analysisProgress || t('upload.analyzingDescription')}
         </p>
 
         {error && (
@@ -218,7 +220,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
               onClick={() => { setIsScanning(false); setError(null); }}
               className="mt-2 w-full py-2 bg-red-500/30 rounded-lg text-red-200 text-sm hover:bg-red-500/40"
             >
-              Try Again
+              {t('upload.tryAgain')}
             </button>
           </div>
         )}
@@ -237,7 +239,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
             <button onClick={stopCamera} className="p-2 rounded-full bg-black/20 backdrop-blur-md">
                 <X size={24} />
             </button>
-            <span className="font-semibold">계약서 스캔</span>
+            <span className="font-semibold">{t('upload.contractScan')}</span>
             <div className="w-10"></div>
         </div>
 
@@ -282,13 +284,13 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
                         onClick={retakePhoto}
                         className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
                     >
-                        <RefreshCw size={18} /> 재촬영
+                        <RefreshCw size={18} /> {t('upload.retake')}
                     </button>
                     <button 
                         onClick={confirmPhoto}
                         className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
                     >
-                        <Check size={18} /> 사용하기
+                        <Check size={18} /> {t('upload.use')}
                     </button>
                 </div>
             )}
@@ -304,7 +306,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
         <button onClick={onCancel} className="p-2 -ml-2 rounded-full hover:bg-slate-100">
           <ChevronLeft size={24} className="text-slate-600" />
         </button>
-        <h2 className="font-bold text-lg">계약서 진단</h2>
+        <h2 className="font-bold text-lg">{t('upload.title')}</h2>
         <div className="w-8" />
       </div>
 
@@ -318,8 +320,8 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
               <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-sm">
                 <Camera size={32} />
               </div>
-              <p className="font-bold text-slate-800 text-lg">카메라로 스캔</p>
-              <p className="text-sm text-slate-400 mt-1">계약서 사진을 찍어주세요</p>
+              <p className="font-bold text-slate-800 text-lg">{t('upload.scanWithCamera')}</p>
+              <p className="text-sm text-slate-400 mt-1">{t('upload.scanDescription')}</p>
             </div>
 
             <div className="relative w-full">
@@ -327,7 +329,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
                     <div className="w-full border-t border-slate-200"></div>
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-slate-50 px-2 text-slate-400">또는</span>
+                    <span className="bg-slate-50 px-2 text-slate-400">{t('upload.or')}</span>
                 </div>
             </div>
 
@@ -340,15 +342,15 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
                   />
                   <div className="w-full py-4 rounded-xl border border-slate-200 text-slate-600 font-semibold flex items-center justify-center gap-2 hover:bg-white hover:shadow-sm transition-all">
                     <UploadIcon size={20} />
-                    PDF 또는 이미지 업로드
+                    {t('upload.uploadFile')}
                   </div>
             </label>
             
             <div className="mt-8 bg-yellow-50 p-4 rounded-xl border border-yellow-100 text-sm text-yellow-800 w-full">
               <p className="font-bold mb-1 flex items-center gap-2">
-                <AlertTriangle size={16} /> 개인정보 보호
+                <AlertTriangle size={16} /> {t('upload.privacyTitle')}
               </p>
-              업로드된 계약서는 안전하게 처리되며 분석 후 즉시 삭제됩니다.
+              {t('upload.privacyDescription')}
             </div>
           </>
         ) : (
@@ -368,10 +370,10 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
             
             <Button fullWidth onClick={handleStartAnalysis} className="mb-4">
               <ScanLine size={20} />
-              분석 시작하기
+              {t('upload.startAnalysis')}
             </Button>
             <p className="text-xs text-center text-slate-400">
-              분석을 시작하면 서비스 이용 약관에 동의하는 것으로 간주됩니다.
+              {t('upload.termsAgreement')}
             </p>
           </div>
         )}

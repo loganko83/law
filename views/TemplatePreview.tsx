@@ -3,6 +3,7 @@ import { ChevronLeft, Copy, Check, FileEdit, Download, History, Save, X, RotateC
 import { Button } from '../components/Button';
 import { STANDARD_TEMPLATES } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 interface TemplatePreviewProps {
   templateId: string;
@@ -18,6 +19,7 @@ interface Version {
 }
 
 export const TemplatePreview: React.FC<TemplatePreviewProps> = ({ templateId, onBack, onUseTemplate }) => {
+  const { t } = useTranslation();
   const template = STANDARD_TEMPLATES[templateId];
   const editorRef = useRef<HTMLDivElement>(null);
   
@@ -27,11 +29,11 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({ templateId, on
   
   // History State
   const [versions, setVersions] = useState<Version[]>(() => [
-    { 
-      id: 'initial', 
-      label: '원본 템플릿', 
-      content: template?.content || '', 
-      timestamp: new Date() 
+    {
+      id: 'initial',
+      label: 'Original Template',
+      content: template?.content || '',
+      timestamp: new Date()
     }
   ]);
   const [showHistory, setShowHistory] = useState(false);
@@ -55,8 +57,8 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({ templateId, on
   if (!template) {
     return (
         <div className="h-screen flex items-center justify-center flex-col">
-            <p className="text-slate-500 mb-4">템플릿을 찾을 수 없습니다.</p>
-            <Button onClick={onBack}>돌아가기</Button>
+            <p className="text-slate-500 mb-4">{t('template.notFound')}</p>
+            <Button onClick={onBack}>{t('common.goBack')}</Button>
         </div>
     );
   }
@@ -99,7 +101,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({ templateId, on
   const handleSaveVersion = () => {
     const newVersion: Version = {
       id: Date.now().toString(),
-      label: `수정본 ${versions.length}`,
+      label: `${t('template.revision')} ${versions.length}`,
       content: content, // Saves HTML
       timestamp: new Date()
     };
@@ -109,7 +111,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({ templateId, on
   };
 
   const handleRestoreVersion = (version: Version) => {
-    if (window.confirm('현재 작성 중인 내용이 선택한 버전으로 대체됩니다. 계속하시겠습니까?')) {
+    if (window.confirm(t('template.restoreConfirm'))) {
       setContent(version.content);
       if (editorRef.current) {
           if (version.id === 'initial') {
@@ -146,10 +148,10 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({ templateId, on
         <h2 className="font-bold text-slate-800 text-center truncate flex-1 px-2">
           {template.title}
         </h2>
-        <button 
+        <button
           onClick={() => setShowHistory(true)}
           className={`p-2 rounded-full hover:bg-slate-50 transition-colors ${showHistory ? 'text-blue-600 bg-blue-50' : 'text-slate-600'}`}
-          title="히스토리"
+          title={t('template.history')}
         >
           <History size={22} />
         </button>
@@ -164,46 +166,46 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({ templateId, on
                     <button
                         onMouseDown={(e) => { e.preventDefault(); handleFormat('bold'); }}
                         className={`p-1.5 rounded-md transition-colors ${activeFormats.bold ? 'bg-blue-100 text-blue-700' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200'}`}
-                        title="굵게"
+                        title={t('template.bold')}
                     >
                         <Bold size={16} />
                     </button>
                     <button
                         onMouseDown={(e) => { e.preventDefault(); handleFormat('italic'); }}
                         className={`p-1.5 rounded-md transition-colors ${activeFormats.italic ? 'bg-blue-100 text-blue-700' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200'}`}
-                        title="기울임"
+                        title={t('template.italic')}
                     >
                         <Italic size={16} />
                     </button>
                     <button
                         onMouseDown={(e) => { e.preventDefault(); handleFormat('underline'); }}
                         className={`p-1.5 rounded-md transition-colors ${activeFormats.underline ? 'bg-blue-100 text-blue-700' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200'}`}
-                        title="밑줄"
+                        title={t('template.underline')}
                     >
                         <Underline size={16} />
                     </button>
                 </div>
 
                 <div className="flex gap-1">
-                    <button 
+                    <button
                         onClick={handleSaveVersion}
                         className="p-1.5 rounded-md text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                        title="버전 저장"
+                        title={t('template.saveVersion')}
                     >
                         {isSaved ? <Check size={16} className="text-blue-600"/> : <Save size={16} />}
                     </button>
                     <div className="w-px h-4 bg-slate-200 my-auto mx-1"></div>
-                    <button 
+                    <button
                         onClick={handleCopy}
                         className="p-1.5 rounded-md text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors"
-                        title="복사하기"
+                        title={t('common.copy')}
                     >
                         {isCopied ? <Check size={16} className="text-green-600"/> : <Copy size={16} />}
                     </button>
-                     <button 
+                     <button
                         onClick={handleDownload}
                         className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors"
-                        title="TXT 다운로드"
+                        title={t('template.downloadTxt')}
                     >
                         <Download size={16} />
                     </button>
@@ -222,7 +224,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({ templateId, on
             />
         </div>
         <p className="text-[10px] text-slate-400 mt-2 text-center">
-          내용을 자유롭게 수정하고 서식을 적용할 수 있습니다.
+          {t('template.editHint')}
         </p>
       </div>
 
@@ -230,7 +232,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({ templateId, on
       <div className="p-4 bg-white border-t border-slate-100 shrink-0 z-20">
         <Button fullWidth onClick={handleUseTemplateClick} className="flex items-center justify-center gap-2">
             <FileEdit size={18} />
-            이 템플릿으로 계약서 작성
+            {t('template.useThisTemplate')}
         </Button>
       </div>
 
@@ -258,7 +260,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({ templateId, on
               <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <h3 className="font-bold text-slate-800 flex items-center gap-2">
                   <History size={18} className="text-blue-500" />
-                  버전 히스토리
+                  {t('template.versionHistory')}
                 </h3>
                 <button onClick={() => setShowHistory(false)} className="p-1 hover:bg-slate-200 rounded-full text-slate-500">
                   <X size={20} />
@@ -273,20 +275,20 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({ templateId, on
                         <span className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
                             {version.label}
                             {index === 0 && versions.length > 1 && (
-                                <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">최신</span>
+                                <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">{t('template.latest')}</span>
                             )}
                         </span>
                         <div className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
                           <Clock size={10} />
-                          {version.timestamp.toLocaleTimeString()} 
+                          {version.timestamp.toLocaleTimeString()}
                           <span className="mx-1">•</span>
-                          {version.content.replace(/<[^>]*>/g, '').length}자
+                          {version.content.replace(/<[^>]*>/g, '').length} {t('template.characters')}
                         </div>
                       </div>
-                      <button 
+                      <button
                         onClick={() => handleRestoreVersion(version)}
                         className="p-1.5 rounded-full bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                        title="이 버전으로 복구"
+                        title={t('template.restoreVersion')}
                       >
                         <RotateCcw size={14} />
                       </button>
@@ -299,13 +301,13 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({ templateId, on
                 
                 {versions.length === 0 && (
                     <div className="text-center py-8 text-slate-400">
-                        <p>저장된 버전이 없습니다.</p>
+                        <p>{t('template.noSavedVersions')}</p>
                     </div>
                 )}
               </div>
-              
+
               <div className="p-4 border-t border-slate-100 bg-slate-50 text-[10px] text-slate-400 text-center">
-                저장 버튼을 누르면 현재 상태가 히스토리에 기록됩니다.
+                {t('template.saveHint')}
               </div>
             </motion.div>
           </>

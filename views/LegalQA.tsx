@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Send, User, Bot, AlertCircle, Database } from 'lucide-react';
 import { UserProfile } from '../types';
 import { GoogleGenAI } from "@google/genai";
@@ -15,11 +16,22 @@ interface Message {
 }
 
 export const LegalQA: React.FC<LegalQAProps> = ({ userProfile, onBack }) => {
+  const { t, i18n } = useTranslation();
+
+  const getInitialMessage = () => {
+    const name = userProfile?.name || t('common.customer', 'Customer');
+    const businessType = userProfile?.businessType ? `'${userProfile.businessType}'` : '';
+    if (i18n.language === 'ko') {
+      return `안녕하세요. ${name}님의 법률 AI 비서입니다.\n${businessType} 업무와 관련하여 궁금한 점이 있으신가요? 상황을 말씀해 주시면 판례와 법령을 바탕으로 분석해 드립니다.`;
+    }
+    return `Hello. I am your AI legal assistant, ${name}.\n${businessType ? `For your ${businessType} work, ` : ''}do you have any questions? Please describe your situation and I will analyze it based on case law and regulations.`;
+  };
+
   const [messages, setMessages] = useState<Message[]>([
-    { 
-      id: '1', 
-      role: 'assistant', 
-      text: `안녕하세요. ${userProfile?.name || '고객'}님의 법률 AI 비서입니다.\n${userProfile?.businessType ? `'${userProfile.businessType}'` : ''} 업무와 관련하여 궁금한 점이 있으신가요? 상황을 말씀해 주시면 판례와 법령을 바탕으로 분석해 드립니다.` 
+    {
+      id: '1',
+      role: 'assistant',
+      text: getInitialMessage()
     }
   ]);
   const [input, setInput] = useState('');
@@ -79,7 +91,7 @@ export const LegalQA: React.FC<LegalQAProps> = ({ userProfile, onBack }) => {
         }
     } catch (error) {
         console.error(error);
-        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', text: '죄송합니다. 오류가 발생하여 답변을 생성할 수 없습니다.' }]);
+        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', text: t('legalQA.error', 'Sorry, an error occurred and I cannot generate a response.') }]);
     } finally {
         setIsTyping(false);
     }
@@ -92,10 +104,10 @@ export const LegalQA: React.FC<LegalQAProps> = ({ userProfile, onBack }) => {
           <ChevronLeft size={24} className="text-slate-600" />
         </button>
         <div>
-            <h2 className="font-bold text-slate-800">법적 쟁점 분석</h2>
+            <h2 className="font-bold text-slate-800">{t('legalQA.title')}</h2>
             <div className="flex items-center gap-1">
                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                <p className="text-[10px] text-emerald-600 font-medium">Personalized AI Agent Active</p>
+                <p className="text-[10px] text-emerald-600 font-medium">{t('legalQA.agentActive')}</p>
             </div>
         </div>
       </div>
@@ -105,14 +117,14 @@ export const LegalQA: React.FC<LegalQAProps> = ({ userProfile, onBack }) => {
              <div className="flex justify-center mb-4">
                  <div className="bg-slate-100 rounded-full px-3 py-1 flex items-center gap-1.5 text-[10px] text-slate-500 border border-slate-200">
                     <Database size={10} />
-                    <span>{userProfile.businessType} 맞춤형 지식 베이스 가동 중</span>
+                    <span>{userProfile.businessType} {t('legalQA.knowledgeBase')}</span>
                  </div>
              </div>
         )}
 
         <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 flex items-start gap-2 text-xs text-orange-800 mb-4">
             <AlertCircle size={14} className="shrink-0 mt-0.5" />
-            <p>본 상담 내용은 법적 효력이 없으며 참고용으로만 활용하세요. 정확한 판단을 위해서는 반드시 변호사와 상담하시기 바랍니다.</p>
+            <p>{t('legal.disclaimer')}</p>
         </div>
 
         {messages.map((msg) => (
@@ -154,7 +166,7 @@ export const LegalQA: React.FC<LegalQAProps> = ({ userProfile, onBack }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="상황을 자세히 설명해주세요..."
+            placeholder={t('legalQA.inputPlaceholder')}
             className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-emerald-500 outline-none"
           />
           <button 

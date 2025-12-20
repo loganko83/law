@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Home, Scale, PlusCircle, User } from 'lucide-react';
 import { ViewState } from '../types';
 
@@ -9,6 +10,8 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-slate-50 relative max-w-md mx-auto shadow-2xl overflow-hidden flex flex-col">
       {/* Header - Conditional based on view could be added here */}
@@ -18,30 +21,30 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeV
 
       {/* Bottom Navigation */}
       <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-4 flex justify-between items-center z-50 pb-8">
-        <NavButton 
-          icon={<Home size={24} />} 
-          label="홈" 
-          active={currentView === 'HOME'} 
-          onClick={() => onChangeView('HOME')} 
+        <NavButton
+          icon={<Home size={24} />}
+          label={t('nav.home')}
+          active={currentView === 'HOME'}
+          onClick={() => onChangeView('HOME')}
         />
-        <NavButton 
-          icon={<PlusCircle size={24} />} 
-          label="진단" 
-          active={currentView === 'UPLOAD' || currentView === 'ANALYSIS_LOADING' || currentView === 'REPORT'} 
-          onClick={() => onChangeView('UPLOAD')} 
+        <NavButton
+          icon={<PlusCircle size={24} />}
+          label={t('nav.diagnosis')}
+          active={currentView === 'UPLOAD' || currentView === 'ANALYSIS_LOADING' || currentView === 'REPORT'}
+          onClick={() => onChangeView('UPLOAD')}
           primary
         />
-        <NavButton 
-          icon={<Scale size={24} />} 
-          label="법률 지원" 
-          active={currentView === 'LEGAL_SERVICES' || currentView === 'CONTENT_PROOF' || currentView === 'LEGAL_QA'} 
-          onClick={() => onChangeView('LEGAL_SERVICES')} 
+        <NavButton
+          icon={<Scale size={24} />}
+          label={t('nav.legalServices')}
+          active={currentView === 'LEGAL_SERVICES' || currentView === 'CONTENT_PROOF' || currentView === 'LEGAL_QA'}
+          onClick={() => onChangeView('LEGAL_SERVICES')}
         />
-        <NavButton 
-          icon={<User size={24} />} 
-          label="내 정보" 
-          active={currentView === 'PROFILE'} 
-          onClick={() => onChangeView('PROFILE')} 
+        <NavButton
+          icon={<User size={24} />}
+          label={t('nav.profile')}
+          active={currentView === 'PROFILE'}
+          onClick={() => onChangeView('PROFILE')}
         />
       </div>
     </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, FileText, Download, Send, RefreshCw, Copy, Check, AlertTriangle, Database } from 'lucide-react';
 import { Button } from '../components/Button';
 import { motion } from 'framer-motion';
@@ -11,6 +12,7 @@ interface ContentProofGeneratorProps {
 }
 
 export const ContentProofGenerator: React.FC<ContentProofGeneratorProps> = ({ userProfile, onBack }) => {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'FORM' | 'GENERATING' | 'RESULT'>('FORM');
   const [formData, setFormData] = useState({
     sender: userProfile?.name || '', // Pre-fill from profile
@@ -84,11 +86,11 @@ ${userContext}
         setGeneratedText(response.text);
         setStep('RESULT');
       } else {
-        throw new Error("AI 응답이 비어있습니다.");
+        throw new Error(t('contentProof.emptyResponse', 'AI response is empty.'));
       }
     } catch (error) {
       console.error("Generation error:", error);
-      alert("문서 생성 중 오류가 발생했습니다. 다시 시도해 주세요.");
+      alert(t('contentProof.generationError', 'An error occurred while generating the document. Please try again.'));
       setStep('FORM');
     }
   };
@@ -102,18 +104,16 @@ ${userContext}
   if (step === 'GENERATING') {
     return (
       <div className="h-screen flex flex-col items-center justify-center p-6 bg-slate-50">
-        <motion.div 
+        <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             className="mb-4 text-indigo-600"
         >
             <RefreshCw size={40} />
         </motion.div>
-        <h3 className="text-xl font-bold text-slate-800 mb-2">AI 법률 문서 작성 중...</h3>
+        <h3 className="text-xl font-bold text-slate-800 mb-2">{t('contentProof.generating')}</h3>
         <p className="text-slate-500 text-center text-sm leading-relaxed">
-          고객님의 비즈니스 정보와 입력하신 사실관계를 분석하여<br/>
-          최적화된 내용증명 서식을 생성하고 있습니다.<br/>
-          <span className="text-xs text-slate-400 mt-2 block">(약 10~20초 소요됩니다)</span>
+          {t('contentProof.generatingDescription')}
         </p>
       </div>
     );
@@ -126,7 +126,7 @@ ${userContext}
           <button onClick={() => setStep('FORM')} className="p-2 -ml-2 rounded-full hover:bg-slate-50">
             <ChevronLeft size={24} className="text-slate-600" />
           </button>
-          <h2 className="font-bold text-slate-800">내용증명 미리보기</h2>
+          <h2 className="font-bold text-slate-800">{t('contentProof.preview')}</h2>
           <button 
              onClick={handleCopy}
              className="p-2 rounded-full hover:bg-slate-50 text-slate-600"
@@ -143,16 +143,16 @@ ${userContext}
           </div>
           <div className="mt-4 flex items-start gap-2 text-xs text-orange-600 bg-orange-50 p-3 rounded-lg border border-orange-100 max-w-2xl mx-auto">
              <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-             <p>이 문서는 AI가 생성한 초안입니다. 실제 발송 전 반드시 내용을 검토하고, 필요한 경우 법률 전문가의 자문을 받으시기 바랍니다.</p>
+             <p>{t('contentProof.aiDisclaimer')}</p>
           </div>
         </div>
 
         <div className="p-4 bg-white border-t border-slate-100 flex gap-3 max-w-2xl mx-auto w-full">
-          <Button variant="outline" fullWidth onClick={() => alert('PDF 변환 기능은 추후 제공될 예정입니다. 텍스트를 복사하여 사용해 주세요.')}>
-            <Download size={18} /> PDF 저장
+          <Button variant="outline" fullWidth onClick={() => alert('PDF conversion feature will be available soon. Please copy the text to use.')}>
+            <Download size={18} /> {t('contentProof.savePdf')}
           </Button>
           <Button fullWidth onClick={() => setStep('FORM')}>
-            <FileText size={18} /> 내용 수정하기
+            <FileText size={18} /> {t('contentProof.edit')}
           </Button>
         </div>
       </div>
@@ -165,58 +165,58 @@ ${userContext}
         <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-slate-50">
           <ChevronLeft size={24} className="text-slate-600" />
         </button>
-        <h2 className="font-bold text-slate-800">내용증명 작성 (AI)</h2>
+        <h2 className="font-bold text-slate-800">{t('contentProof.title')}</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
         <div className="mb-6 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
             <p className="text-sm text-indigo-800 leading-relaxed font-medium">
-                <span className="font-bold block mb-1 flex items-center gap-1"><Database size={14} /> 맞춤형 작성</span>
+                <span className="font-bold block mb-1 flex items-center gap-1"><Database size={14} /> {t('contentProof.personalized')}</span>
                 {userProfile?.businessType ? (
-                    <>고객님의 <strong>'{userProfile.businessType}'</strong> 업무 특성에 맞춰 문서를 작성합니다.</>
+                    t('contentProof.profileHintWithBusiness', { businessType: userProfile.businessType })
                 ) : (
-                    '프로필에 비즈니스 정보를 입력하면 더 정확한 문서가 생성됩니다.'
+                    t('contentProof.profileHint')
                 )}
             </p>
         </div>
 
         <div className="space-y-4 max-w-2xl mx-auto">
             <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1.5">발신인 (보내는 분)</label>
-                <input 
-                    type="text" 
+                <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('contentProof.sender')}</label>
+                <input
+                    type="text"
                     value={formData.sender}
                     onChange={(e) => setFormData({...formData, sender: e.target.value})}
-                    placeholder="성명 또는 상호"
+                    placeholder={t('contentProof.senderPlaceholder')}
                     className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none transition-colors"
                 />
             </div>
             <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1.5">수신인 (받는 분)</label>
-                <input 
-                    type="text" 
+                <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('contentProof.receiver')}</label>
+                <input
+                    type="text"
                     value={formData.receiver}
                     onChange={(e) => setFormData({...formData, receiver: e.target.value})}
-                    placeholder="성명 또는 상호"
+                    placeholder={t('contentProof.receiverPlaceholder')}
                     className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none transition-colors"
                 />
             </div>
             <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1.5">제목 (선택)</label>
-                <input 
-                    type="text" 
+                <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('contentProof.subject')}</label>
+                <input
+                    type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    placeholder="예: 물품 대금 미지급에 대한 독촉 (미입력 시 자동 생성)"
+                    placeholder={t('contentProof.subjectPlaceholder')}
                     className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none transition-colors"
                 />
             </div>
             <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1.5">상세 내용 (육하원칙)</label>
-                <textarea 
+                <label className="block text-xs font-bold text-slate-500 mb-1.5">{t('contentProof.content')}</label>
+                <textarea
                     value={formData.content}
                     onChange={(e) => setFormData({...formData, content: e.target.value})}
-                    placeholder="예: 2023년 10월 1일 수신인과 웹사이트 개발 용역 계약을 체결하였으며, 2023년 12월 31일 용역을 완료하여 결과물을 인도하였습니다. 그러나 약정된 잔금 300만원이 현재까지 지급되지 않고 있습니다."
+                    placeholder={t('contentProof.contentPlaceholder')}
                     className="w-full h-48 bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none resize-none transition-colors"
                 />
             </div>
@@ -225,7 +225,7 @@ ${userContext}
 
       <div className="p-4 bg-white border-t border-slate-100">
         <Button fullWidth onClick={handleGenerate} disabled={!formData.sender || !formData.receiver || !formData.content} className="max-w-2xl mx-auto">
-            <Send size={18} /> AI 내용증명 생성하기
+            <Send size={18} /> {t('contentProof.generate')}
         </Button>
       </div>
     </div>

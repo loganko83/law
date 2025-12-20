@@ -1,0 +1,54 @@
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Globe } from 'lucide-react';
+
+interface LanguageSwitcherProps {
+  compact?: boolean;
+}
+
+export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ compact = false }) => {
+  const { i18n } = useTranslation();
+
+  const languages = [
+    { code: 'ko', label: '한국어', flag: '🇰🇷' },
+    { code: 'en', label: 'English', flag: '🇺🇸' },
+  ];
+
+  const currentLang = languages.find(l => l.code === i18n.language) || languages[0];
+
+  const toggleLanguage = () => {
+    const nextLang = i18n.language === 'ko' ? 'en' : 'ko';
+    i18n.changeLanguage(nextLang);
+  };
+
+  if (compact) {
+    return (
+      <button
+        onClick={toggleLanguage}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors text-sm"
+      >
+        <Globe size={14} className="text-slate-500" />
+        <span className="font-medium text-slate-700">{currentLang.flag}</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex gap-2">
+      {languages.map((lang) => (
+        <button
+          key={lang.code}
+          onClick={() => i18n.changeLanguage(lang.code)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+            i18n.language === lang.code
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-white border border-slate-200 text-slate-600 hover:border-blue-300'
+          }`}
+        >
+          <span>{lang.flag}</span>
+          <span className="font-medium">{lang.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+};
