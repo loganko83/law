@@ -1,0 +1,7 @@
+{
+  "name": "SafeContract - 안심 계약 케어",
+  "description": "프리랜서와 소상공인을 위한 AI 법률 계약 케어 서비스. 서명하기 전에 위험 요소를 확인하세요.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
