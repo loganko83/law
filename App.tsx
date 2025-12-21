@@ -15,6 +15,8 @@ import { Contract, ViewState, ContractAnalysis, ContractStatus, UserProfile } fr
 import { MOCK_CONTRACTS, MOCK_ANALYSIS_RESULT, STANDARD_TEMPLATES } from './constants';
 import { ToastProvider } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { OfflineIndicator } from './components/OfflineIndicator';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>('HOME');
@@ -246,22 +248,28 @@ const App: React.FC = () => {
   if (['DETAIL', 'DOCUMENT', 'TEMPLATE_PREVIEW', 'CONTENT_PROOF', 'LEGAL_QA', 'DOCUSIGN_SIGNING'].includes(currentView)) {
     return (
       <ErrorBoundary>
-        <ToastProvider>
-          <div className="max-w-md mx-auto min-h-screen bg-slate-50 shadow-2xl">
-            {renderContent()}
-          </div>
-        </ToastProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <OfflineIndicator />
+            <div className="max-w-md mx-auto min-h-screen bg-slate-50 dark:bg-slate-900 shadow-2xl transition-colors">
+              {renderContent()}
+            </div>
+          </ToastProvider>
+        </ThemeProvider>
       </ErrorBoundary>
     );
   }
 
   return (
     <ErrorBoundary>
-      <ToastProvider>
-        <Layout currentView={currentView} onChangeView={handleNavigate}>
-          {renderContent()}
-        </Layout>
-      </ToastProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <OfflineIndicator />
+          <Layout currentView={currentView} onChangeView={handleNavigate}>
+            {renderContent()}
+          </Layout>
+        </ToastProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 };

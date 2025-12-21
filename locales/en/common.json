@@ -274,7 +274,8 @@
     "newCard": "New Card",
     "enterForBetterAnalysis": "Enter content for more accurate AI analysis.",
     "noteYourConcerns": "Note any specific concerns you have.",
-    "managePayment": "Manage Payment"
+    "managePayment": "Manage Payment",
+    "displaySettings": "Display Settings"
   },
   "templates": {
     "freelance": "Service Agreement",

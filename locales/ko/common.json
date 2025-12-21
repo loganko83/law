@@ -276,7 +276,8 @@
     "cvcPlaceholder": "123",
     "completeCardRegistration": "카드 등록 완료",
     "deletePaymentConfirm": "이 결제 수단을 삭제하시겠습니까?",
-    "newCard": "새 카드"
+    "newCard": "새 카드",
+    "displaySettings": "화면 설정"
   },
   "templates": {
     "freelance": "표준 용역",

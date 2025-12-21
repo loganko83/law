@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { User, Settings, CreditCard, LogOut, Shield, Mail, Phone, ChevronRight, FileClock, History, Edit2, Calendar, X, Check, Trash2, Plus, Smartphone, Database, Brain } from 'lucide-react';
+import { User, Settings, CreditCard, LogOut, Shield, Mail, Phone, ChevronRight, FileClock, History, Edit2, Calendar, X, Check, Trash2, Plus, Smartphone, Database, Brain, Sun, Moon } from 'lucide-react';
 import { Contract, UserProfile } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { ThemeToggle } from '../components/ThemeToggle';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface ProfileProps {
   userProfile: UserProfile;
@@ -20,6 +22,7 @@ const HISTORY_CONTRACTS: Partial<Contract>[] = [
 
 export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, onBack }) => {
   const { t } = useTranslation();
+  const { resolvedTheme } = useTheme();
 
   // Payment State
   const [savedCards, setSavedCards] = useState([
@@ -182,9 +185,20 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
             </div>
         </div>
 
+        {/* Display Settings */}
+        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                    {resolvedTheme === 'dark' ? <Moon size={18} className="text-indigo-500" /> : <Sun size={18} className="text-amber-500" />}
+                    <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">{t('profile.displaySettings')}</h3>
+                </div>
+            </div>
+            <ThemeToggle variant="select" />
+        </div>
+
         {/* Settings Menu */}
         <div className="space-y-2 pt-2">
-            <h3 className="font-bold text-slate-800 text-sm mb-2 px-1">{t('profile.accountSettings')}</h3>
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-2 px-1">{t('profile.accountSettings')}</h3>
             <MenuItem
                 icon={<User size={18} />}
                 label={t('profile.editPersonalInfo')}
