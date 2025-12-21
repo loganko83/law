@@ -86,10 +86,11 @@ export const Home: React.FC<HomeProps> = ({ contracts, onContractClick, onNewChe
           <LanguageSwitcher compact />
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className={`p-2 rounded-full border shadow-sm relative transition-colors ${showNotifications ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-100'}`}
+            data-testid="btn-notifications"
+            className={`p-3 min-w-[44px] min-h-[44px] rounded-full border shadow-sm relative transition-colors flex items-center justify-center ${showNotifications ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-100'}`}
           >
             <Bell size={20} className={showNotifications ? 'text-blue-600' : 'text-slate-600'} />
-            <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+            <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
           </button>
         </div>
 
@@ -104,7 +105,7 @@ export const Home: React.FC<HomeProps> = ({ contracts, onContractClick, onNewChe
                 >
                     <div className="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                         <span className="text-xs font-bold text-slate-600">{t('notifications.title')}</span>
-                        <button onClick={() => setShowNotifications(false)}><X size={14} className="text-slate-400" /></button>
+                        <button onClick={() => setShowNotifications(false)} className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-slate-100 rounded-lg"><X size={16} className="text-slate-400" /></button>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
                         {notifications.map(n => (
@@ -152,13 +153,14 @@ export const Home: React.FC<HomeProps> = ({ contracts, onContractClick, onNewChe
           <h3 className="font-bold text-lg text-slate-800">{t('home.activeContracts')}</h3>
         </div>
 
-        {/* Filter Chips */}
+        {/* Filter Chips - minimum 44px touch target for accessibility */}
         <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-2 -mx-2 px-2">
             {filters.map(filterKey => (
                 <button
                     key={filterKey}
                     onClick={() => setFilterType(filterKey)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                    data-testid={`filter-${filterKey}`}
+                    className={`px-4 py-2.5 min-h-[44px] rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
                         filterType === filterKey
                             ? 'bg-slate-800 text-white shadow-md'
                             : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-300'
@@ -186,16 +188,17 @@ export const Home: React.FC<HomeProps> = ({ contracts, onContractClick, onNewChe
       <div>
         <div className="flex justify-between items-center mb-3">
             <h3 className="font-bold text-lg text-slate-800">{t('home.templates')}</h3>
-            <button className="text-xs text-blue-600 font-semibold">{t('home.viewAll')}</button>
+            <button className="text-sm text-blue-600 font-semibold px-2 py-2 min-h-[44px] hover:bg-blue-50 rounded-lg transition-colors" data-testid="btn-view-all-templates">{t('home.viewAll')}</button>
         </div>
 
-        {/* Template Categories */}
+        {/* Template Categories - minimum 44px touch target */}
         <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar -mx-2 px-2">
             {templateCategories.map(cat => (
                  <button
                     key={cat}
                     onClick={() => setTemplateCategory(cat)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                    data-testid={`template-cat-${cat}`}
+                    className={`px-4 py-2.5 min-h-[44px] rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
                         templateCategory === cat
                             ? 'bg-slate-800 text-white shadow-md'
                             : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-300'
@@ -218,12 +221,13 @@ export const Home: React.FC<HomeProps> = ({ contracts, onContractClick, onNewChe
                         transition={{ type: "spring", stiffness: 300, damping: 25 }}
                         key={tpl.id}
                         onClick={() => onTemplateClick?.(tpl.id)}
-                        className="min-w-[110px] p-4 rounded-xl border border-slate-100 bg-white shadow-sm flex flex-col items-center gap-3 active:scale-95 transition-transform"
+                        data-testid={`template-${tpl.id}`}
+                        className="min-w-[110px] min-h-[120px] p-4 rounded-xl border border-slate-100 bg-white shadow-sm flex flex-col items-center gap-3 active:scale-95 transition-transform hover:border-blue-200 hover:shadow-md"
                     >
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center ${tpl.color}`}>
                             {tpl.icon}
                         </div>
-                        <span className="text-xs font-bold text-slate-700">{t(tpl.titleKey)}</span>
+                        <span className="text-xs font-bold text-slate-700 text-center">{t(tpl.titleKey)}</span>
                     </motion.button>
                 ))
             ) : (

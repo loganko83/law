@@ -17,11 +17,12 @@ export const LegalServices: React.FC<LegalServicesProps> = ({ onNavigate }) => {
         <p className="text-slate-500 text-sm">{t('legal.subtitle', 'AI helps with complex legal matters.')}</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4" data-testid="legal-services-list">
         {/* Content Proof Generator */}
-        <button 
+        <button
           onClick={() => onNavigate('CONTENT_PROOF')}
-          className="w-full bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 hover:border-blue-200 hover:shadow-md transition-all group text-left"
+          data-testid="btn-content-proof"
+          className="w-full bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 hover:border-blue-200 hover:shadow-md transition-all group text-left min-h-[88px]"
         >
           <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
             <Mail size={28} />
@@ -36,9 +37,10 @@ export const LegalServices: React.FC<LegalServicesProps> = ({ onNavigate }) => {
         </button>
 
         {/* Legal Q&A */}
-        <button 
+        <button
           onClick={() => onNavigate('LEGAL_QA')}
-          className="w-full bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 hover:border-blue-200 hover:shadow-md transition-all group text-left"
+          data-testid="btn-legal-qa"
+          className="w-full bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 hover:border-blue-200 hover:shadow-md transition-all group text-left min-h-[88px]"
         >
           <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
             <MessageCircle size={28} />

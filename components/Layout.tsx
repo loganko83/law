@@ -20,51 +20,57 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeV
       </div>
 
       {/* Bottom Navigation */}
-      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-4 flex justify-between items-center z-50 pb-8">
+      <nav className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-4 py-3 flex justify-around items-center z-50 pb-6" data-testid="bottom-nav">
         <NavButton
-          icon={<Home size={24} />}
+          icon={<Home size={22} />}
           label={t('nav.home')}
           active={currentView === 'HOME'}
           onClick={() => onChangeView('HOME')}
+          testId="nav-home"
         />
         <NavButton
-          icon={<PlusCircle size={24} />}
+          icon={<PlusCircle size={22} />}
           label={t('nav.diagnosis')}
           active={currentView === 'UPLOAD' || currentView === 'ANALYSIS_LOADING' || currentView === 'REPORT'}
           onClick={() => onChangeView('UPLOAD')}
           primary
+          testId="nav-diagnosis"
         />
         <NavButton
-          icon={<Scale size={24} />}
+          icon={<Scale size={22} />}
           label={t('nav.legalServices')}
           active={currentView === 'LEGAL_SERVICES' || currentView === 'CONTENT_PROOF' || currentView === 'LEGAL_QA'}
           onClick={() => onChangeView('LEGAL_SERVICES')}
+          testId="nav-legal"
         />
         <NavButton
-          icon={<User size={24} />}
+          icon={<User size={22} />}
           label={t('nav.profile')}
           active={currentView === 'PROFILE'}
           onClick={() => onChangeView('PROFILE')}
+          testId="nav-profile"
         />
-      </div>
+      </nav>
     </div>
   );
 };
 
-const NavButton: React.FC<{ 
-  icon: React.ReactNode; 
-  label: string; 
-  active: boolean; 
+const NavButton: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
   primary?: boolean;
   onClick: () => void;
-}> = ({ icon, label, active, primary, onClick }) => {
+  testId?: string;
+}> = ({ icon, label, active, primary, onClick, testId }) => {
   if (primary) {
     return (
-      <button 
+      <button
         onClick={onClick}
-        className="flex flex-col items-center justify-center -mt-8"
+        data-testid={testId}
+        className="flex flex-col items-center justify-center -mt-8 min-w-[56px]"
       >
-        <div className="bg-blue-600 text-white p-4 rounded-full shadow-xl shadow-blue-200 transition-transform active:scale-95">
+        <div className="bg-blue-600 text-white p-4 rounded-full shadow-xl shadow-blue-200 transition-transform active:scale-95 min-w-[56px] min-h-[56px] flex items-center justify-center">
           {icon}
         </div>
         <span className="text-xs font-medium text-blue-600 mt-1">{label}</span>
@@ -72,10 +78,12 @@ const NavButton: React.FC<{
     );
   }
 
+  // Minimum 44x44px touch target for accessibility (WCAG 2.1 AA)
   return (
-    <button 
+    <button
       onClick={onClick}
-      className={`flex flex-col items-center justify-center gap-1 ${active ? 'text-blue-600' : 'text-slate-400'}`}
+      data-testid={testId}
+      className={`flex flex-col items-center justify-center gap-1 min-w-[48px] min-h-[48px] p-1 rounded-lg transition-colors ${active ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:bg-slate-50'}`}
     >
       {icon}
       <span className="text-[10px] font-medium">{label}</span>

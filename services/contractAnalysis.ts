@@ -8,6 +8,59 @@
 import { generateWithRAG, generateContent, MODELS } from "./geminiClient";
 import { ContractAnalysis, RiskLevel, RiskPoint } from "../types";
 
+// Error types for better error handling
+export class AnalysisError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public userMessage: string
+  ) {
+    super(message);
+    this.name = "AnalysisError";
+  }
+}
+
+export const ERROR_CODES = {
+  API_KEY_INVALID: "API_KEY_INVALID",
+  API_KEY_MISSING: "API_KEY_MISSING",
+  NETWORK_ERROR: "NETWORK_ERROR",
+  RATE_LIMITED: "RATE_LIMITED",
+  PARSE_ERROR: "PARSE_ERROR",
+  CONTRACT_TOO_SHORT: "CONTRACT_TOO_SHORT",
+  CONTRACT_TOO_LONG: "CONTRACT_TOO_LONG",
+} as const;
+
+export const ERROR_MESSAGES: Record<string, { en: string; ko: string }> = {
+  [ERROR_CODES.API_KEY_INVALID]: {
+    en: "API key is invalid. Please check your configuration.",
+    ko: "API 키가 유효하지 않습니다. 설정을 확인해주세요.",
+  },
+  [ERROR_CODES.API_KEY_MISSING]: {
+    en: "API key is not configured. Please set GEMINI_API_KEY.",
+    ko: "API 키가 설정되지 않았습니다. GEMINI_API_KEY를 설정해주세요.",
+  },
+  [ERROR_CODES.NETWORK_ERROR]: {
+    en: "Network error. Please check your internet connection.",
+    ko: "네트워크 오류입니다. 인터넷 연결을 확인해주세요.",
+  },
+  [ERROR_CODES.RATE_LIMITED]: {
+    en: "Too many requests. Please try again in a moment.",
+    ko: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
+  },
+  [ERROR_CODES.PARSE_ERROR]: {
+    en: "Failed to process the analysis result.",
+    ko: "분석 결과 처리에 실패했습니다.",
+  },
+  [ERROR_CODES.CONTRACT_TOO_SHORT]: {
+    en: "Contract text is too short. Minimum 50 characters required.",
+    ko: "계약서 내용이 너무 짧습니다. 최소 50자 이상이 필요합니다.",
+  },
+  [ERROR_CODES.CONTRACT_TOO_LONG]: {
+    en: "Contract text is too long. Maximum 100,000 characters.",
+    ko: "계약서 내용이 너무 깁니다. 최대 100,000자까지 가능합니다.",
+  },
+};
+
 // Risk pattern detection (rule-based pre-processing)
 interface RiskPattern {
   pattern: RegExp;
@@ -192,18 +245,82 @@ const parseAnalysisResponse = (response: string, patternRisks: RiskPoint[]): Con
 };
 
 /**
+ * Validate contract text before analysis
+ */
+const validateContractText = (contractText: string, lang: "en" | "ko" = "ko"): void => {
+  if (!contractText || contractText.trim().length < 50) {
+    throw new AnalysisError(
+      "Contract text too short",
+      ERROR_CODES.CONTRACT_TOO_SHORT,
+      ERROR_MESSAGES[ERROR_CODES.CONTRACT_TOO_SHORT][lang]
+    );
+  }
+
+  if (contractText.length > 100000) {
+    throw new AnalysisError(
+      "Contract text too long",
+      ERROR_CODES.CONTRACT_TOO_LONG,
+      ERROR_MESSAGES[ERROR_CODES.CONTRACT_TOO_LONG][lang]
+    );
+  }
+};
+
+/**
+ * Parse API error and return user-friendly error
+ */
+const handleApiError = (error: unknown, lang: "en" | "ko" = "ko"): never => {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+
+  if (errorMessage.includes("API_KEY_INVALID") || errorMessage.includes("API key not valid")) {
+    throw new AnalysisError(
+      errorMessage,
+      ERROR_CODES.API_KEY_INVALID,
+      ERROR_MESSAGES[ERROR_CODES.API_KEY_INVALID][lang]
+    );
+  }
+
+  if (errorMessage.includes("429") || errorMessage.includes("RATE_LIMIT")) {
+    throw new AnalysisError(
+      errorMessage,
+      ERROR_CODES.RATE_LIMITED,
+      ERROR_MESSAGES[ERROR_CODES.RATE_LIMITED][lang]
+    );
+  }
+
+  if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
+    throw new AnalysisError(
+      errorMessage,
+      ERROR_CODES.NETWORK_ERROR,
+      ERROR_MESSAGES[ERROR_CODES.NETWORK_ERROR][lang]
+    );
+  }
+
+  // Generic error
+  throw new AnalysisError(
+    errorMessage,
+    ERROR_CODES.NETWORK_ERROR,
+    ERROR_MESSAGES[ERROR_CODES.NETWORK_ERROR][lang]
+  );
+};
+
+/**
  * Analyze a contract document
  *
  * @param contractText - The full text of the contract
  * @param userContext - Optional context about the user (business type, concerns)
  * @param useRAG - Whether to use RAG for legal context (default: true)
+ * @param lang - Language for error messages (default: "ko")
  * @returns Structured analysis result
  */
 export const analyzeContract = async (
   contractText: string,
   userContext?: string,
-  useRAG: boolean = true
+  useRAG: boolean = true,
+  lang: "en" | "ko" = "ko"
 ): Promise<ContractAnalysis> => {
+  // Step 0: Validate input
+  validateContractText(contractText, lang);
+
   // Step 1: Pattern-based pre-analysis
   const patternRisks = detectPatternRisks(contractText);
 
@@ -212,11 +329,15 @@ export const analyzeContract = async (
 
   let response: { text: string; citations: string[] };
 
-  if (useRAG) {
-    response = await generateWithRAG(prompt, undefined, MODELS.FLASH);
-  } else {
-    const text = await generateContent(prompt, MODELS.FLASH_PREVIEW);
-    response = { text, citations: [] };
+  try {
+    if (useRAG) {
+      response = await generateWithRAG(prompt, undefined, MODELS.FLASH);
+    } else {
+      const text = await generateContent(prompt, MODELS.FLASH_PREVIEW);
+      response = { text, citations: [] };
+    }
+  } catch (error) {
+    handleApiError(error, lang);
   }
 
   // Step 3: Parse and combine results
