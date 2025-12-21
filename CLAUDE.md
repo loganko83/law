@@ -4,129 +4,103 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SafeCon is a legal contract care service (React/TypeScript) that provides:
-- AI-powered contract analysis and risk assessment
-- Document scanning (camera OCR) and file upload
-- Legal Q&A chatbot with personalized context
-- Contract management with timeline tracking
-- DocuSign-style electronic signing simulation
-- Content proof generation
+SafeCon is a Korean legal contract care service (React/TypeScript) providing AI-powered contract analysis, document scanning (OCR), legal Q&A chatbot, contract management, electronic signing simulation, and content proof generation.
 
 ## Development Commands
 
 ```bash
-npm install      # Install dependencies
-npm run dev      # Start dev server on http://localhost:3000
-npm run build    # Production build
-npm run preview  # Preview production build
+npm install          # Install dependencies
+npm run dev          # Start dev server at http://localhost:3000
+npm run build        # Production build (outputs to dist/)
+npm run preview      # Preview production build
+./scripts/deploy.sh  # Full deploy (build + upload + restart Docker)
+```
+
+### Environment Setup
+Create `.env.local` with:
+```
+GEMINI_API_KEY=your_api_key_here
 ```
 
 ## Architecture
 
 ### Tech Stack
-- **Framework**: React 19 with TypeScript
-- **Build**: Vite 6
+- **Framework**: React 19 + TypeScript + Vite 6
 - **Styling**: Tailwind CSS (inline classes)
 - **Animation**: Framer Motion
-- **Icons**: Lucide React
-- **AI**: Google Gemini API (`@google/genai`)
-- **PDF Export**: jspdf + html2canvas
-
-### Project Structure
-```
-/                     # Root (no src directory)
-├── App.tsx           # Main app with state management and routing
-├── index.tsx         # React entry point
-├── types.ts          # TypeScript types (Contract, UserProfile, ViewState, etc.)
-├── constants.ts      # Mock data and standard contract templates
-├── components/       # Reusable UI components (Button, Card, Layout)
-├── views/            # Full-screen page components
-└── vite.config.ts    # Vite config with path alias (@/)
-```
+- **AI**: Google Gemini API (`@google/genai`) - models: gemini-2.5-flash, gemini-3-flash-preview
+- **i18n**: react-i18next (Korean/English, fallback: ko)
+- **PDF**: jspdf + html2canvas
 
 ### Routing Pattern
-The app uses state-based routing via `ViewState` enum in `App.tsx`:
+State-based routing via `ViewState` enum in `App.tsx`:
 - `currentView` state controls which view renders
-- `handleNavigate()` changes views
-- No external router library - all views switch via `setCurrentView()`
+- `handleNavigate(view)` changes views with scroll reset
+- No router library - views switch via `setCurrentView()`
+- Full-screen views (DETAIL, DOCUMENT, LEGAL_QA, etc.) render without Layout
 
 ### State Management
-- All global state lives in `App.tsx` (useState hooks)
-- `contracts`, `selectedContract`, `userProfile`, `currentAnalysis`
-- Props drilled down to views; no external state library
+All global state in `App.tsx` via useState hooks:
+- `contracts`, `selectedContract`, `currentAnalysis`
+- `userProfile` - RAG context injected into AI prompts for personalization
+- Props drilled to views; no external state library
 
-### Key Types
+### Key Types (types.ts)
 - `Contract`: Core entity with status, analysis, timeline
-- `ContractAnalysis`: AI analysis result with risks, score, questions
-- `UserProfile`: RAG context for personalized AI responses
-- `ViewState`: Union type for all possible views
-
-### AI Integration
-Views use Google Gemini API directly via `@google/genai`:
-- API key from `process.env.GEMINI_API_KEY` (set in `.env.local`)
-- `LegalQA.tsx` and `ContentProofGenerator.tsx` use chat completions
-- User profile context injected as system instructions for personalization
-
-### Mobile-First Design
-- Max-width container (`max-w-md mx-auto`)
-- Bottom navigation bar (Layout.tsx)
-- Full-screen views bypass Layout for immersive experience
+- `ContractAnalysis`: AI result with risks[], score, questions[]
+- `UserProfile`: businessType, businessDescription, legalConcerns for RAG
+- `ViewState`: Union of 12 view states (HOME, UPLOAD, REPORT, DETAIL, etc.)
 
 ### Services Layer
 ```
 services/
-├── geminiClient.ts      # Gemini API client with RAG support
-├── contractAnalysis.ts  # AI contract analysis with risk detection
+├── geminiClient.ts      # Gemini client, chat sessions, RAG support
+├── contractAnalysis.ts  # Two-phase analysis: pattern detection + AI
 ```
 
-## AI Contract Analysis
+**Analysis Pipeline** (contractAnalysis.ts):
+1. `detectPatternRisks()` - Regex matching Korean legal terms (unilateral termination, excessive penalties, IP assignment, unlimited liability, auto-renewal)
+2. `analyzeContract()` - Gemini generates JSON with summary, safetyScore, risks[], questions[]
+3. `parseAnalysisResponse()` - Merges pattern + AI risks, handles parse failures gracefully
 
-The analysis pipeline:
-1. **Pattern Detection**: Rule-based risk pattern matching (Korean legal terms)
-2. **AI Analysis**: Gemini generates structured analysis with scores
-3. **RAG (Future)**: Semantic search over legal corpus for context
+### i18n Configuration
+- Locales: `locales/ko/common.json`, `locales/en/common.json`
+- Detection order: localStorage > navigator > htmlTag
+- Storage key: `safecon-language`
+- Use `useTranslation('common')` hook in components
 
-Risk patterns detected:
-- Unilateral termination clauses
-- Excessive penalties (late fees, damages)
-- IP assignment issues
-- Unlimited liability
-- Auto-renewal without notice
+### Mobile-First Design
+- Container: `max-w-md mx-auto`
+- Bottom nav in Layout.tsx
+- Full-screen views bypass Layout
 
 ## Deployment
 
-### Server
-- Host: trendy.storydot.kr
-- Path: /mnt/storage/law
-- Access: SSH with firstkeypair.pem
+### Production URL
+https://trendy.storydot.kr/law/
 
-### Commands
+### Server Access
 ```bash
-# Local development
-npm run dev
+ssh -i C:\server\firstkeypair.pem ubuntu@trendy.storydot.kr
+# Working directory: /mnt/storage/law
+```
 
-# Build for production
-npm run build
-
-# Deploy (requires SSH access)
-./scripts/deploy.sh
-
-# Docker commands on server
+### Docker Commands (on server)
+```bash
 docker-compose up -d --build
 docker-compose down
 docker logs safecon-frontend
 ```
 
 ### GitHub Actions
-Automatic deployment on push to master branch.
-Required secrets:
-- `SSH_PRIVATE_KEY`: Server SSH private key
-- `GEMINI_API_KEY`: Google Gemini API key
+Auto-deploys on push to master/main. Secrets required:
+- `SSH_PRIVATE_KEY`
+- `GEMINI_API_KEY`
 
 ## Spec-Kit Documentation
 
-Development specifications are in `.speckit/`:
-- `constitution.md` - Project principles and tech decisions
-- `specification.md` - Feature requirements and gaps
-- `implementation-plan.md` - Architecture and phases
-- `tasks.md` - Sprint task breakdown
+Development specs in `.speckit/`:
+- `constitution.md` - Principles and tech decisions
+- `specification.md` - Feature requirements
+- `implementation-plan.md` - Architecture phases
+- `tasks.md` - Sprint tasks
