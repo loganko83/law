@@ -5,6 +5,7 @@ import { Camera, Upload as UploadIcon, FileText, X, ChevronLeft, ScanLine, Alert
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContractAnalysis, UserProfile } from '../types';
 import { analyzeContract } from '../services/contractAnalysis';
+import { useToast } from '../components/Toast';
 
 interface UploadProps {
   onAnalyze: (analysis: ContractAnalysis, contractText: string) => void;
@@ -13,6 +14,7 @@ interface UploadProps {
 }
 
 export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile }) => {
+  const toast = useToast();
   const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -56,7 +58,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
       setIsCameraOpen(true);
     } catch (err) {
       console.error("Error accessing camera:", err);
-      alert(t('upload.cameraError', 'Cannot access camera. Please check permissions.'));
+      toast.error(t('upload.cameraError', 'Cannot access camera. Please check permissions.'));
     }
   };
 

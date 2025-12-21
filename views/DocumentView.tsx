@@ -4,6 +4,7 @@ import { ChevronLeft, AlertTriangle, X, Search, List, ArrowUp, ArrowDown, Copy, 
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleGenAI, Type } from "@google/genai";
 import { useTranslation } from 'react-i18next';
+import { useToast } from '../components/Toast';
 
 interface DocumentViewProps {
   contract: Contract;
@@ -19,6 +20,7 @@ interface Clause {
 
 export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfile, onBack }) => {
   const { t } = useTranslation();
+  const toast = useToast();
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [showClauses, setShowClauses] = useState(false);
   
@@ -186,7 +188,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
         }
     } catch (error) {
         console.error("Analysis failed:", error);
-        alert(t('document.analysisError'));
+        toast.error(t('document.analysisError'));
     } finally {
         setIsAnalyzing(false);
     }

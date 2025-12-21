@@ -7,6 +7,7 @@ import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '../components/Toast';
 
 interface ContractDetailProps {
   contract: Contract;
@@ -18,6 +19,7 @@ interface ContractDetailProps {
 
 export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack, onViewDocument, onViewReport, onStartSign }) => {
   const { t } = useTranslation();
+  const toast = useToast();
   const [expandedEvent, setExpandedEvent] = useState<number | null>(null);
   const [events, setEvents] = useState(contract.timeline || []);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
@@ -55,7 +57,7 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
       }
     } else {
       navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}`);
-      alert(t('report.copiedToClipboard'));
+      toast.success(t('report.copiedToClipboard'));
     }
   };
 
@@ -109,7 +111,7 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
       pdf.save(`${cleanTitle}_report.pdf`);
     } catch (e) {
         console.error(e);
-        alert(t('common.error'));
+        toast.error(t('common.error'));
     } finally {
         window.scrollTo(0, originalScrollPos);
         setIsExporting(false);
@@ -139,14 +141,14 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
 
   const handleDocumentDownload = (docName: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    alert(t('contract.downloadingFile', { fileName: docName }));
+    toast.info(t('contract.downloadingFile', { fileName: docName }));
   };
 
   const handleReminder = (e: React.MouseEvent) => {
     e.stopPropagation();
     const confirmed = window.confirm(t('contract.sendNotificationConfirm'));
     if (confirmed) {
-        alert(t('contract.notificationSent'));
+        toast.success(t('contract.notificationSent'));
     }
   };
   
@@ -285,10 +287,10 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                     exit={{ opacity: 0, scale: 0.95 }}
                     className="absolute top-12 right-0 bg-white rounded-xl shadow-xl border border-slate-100 w-48 z-50 overflow-hidden"
                 >
-                    <button className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2" onClick={() => { setShowMenu(false); alert(t('contract.editInfo')); }}>
+                    <button className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2" onClick={() => { setShowMenu(false); toast.info(t('contract.editInfo')); }}>
                         <FileEditIcon size={16} /> {t('contract.editInfo')}
                     </button>
-                    <button className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-50" onClick={() => { setShowMenu(false); alert(t('contract.deleteContract')); }}>
+                    <button className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-50" onClick={() => { setShowMenu(false); toast.warning(t('contract.deleteContract')); }}>
                         <X size={16} /> {t('contract.deleteContract')}
                     </button>
                 </motion.div>
@@ -341,7 +343,7 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                       if (onViewReport && contract.analysis) {
                           onViewReport(contract.analysis);
                       } else {
-                          alert(t('contract.noReportData'));
+                          toast.warning(t('contract.noReportData'));
                       }
                   }}
                   className="flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg text-xs font-semibold hover:bg-blue-100 transition flex items-center justify-center gap-1.5"
@@ -504,13 +506,13 @@ export const ContractDetail: React.FC<ContractDetailProps> = ({ contract, onBack
                                             ) : (
                                                 <>
                                                     <button
-                                                        onClick={(e) => { e.stopPropagation(); alert(t('contract.reminderSet')); }}
+                                                        onClick={(e) => { e.stopPropagation(); toast.success(t('contract.reminderSet')); }}
                                                         className="flex-1 bg-white text-slate-600 border border-slate-200 py-2 rounded-md text-xs font-semibold hover:bg-slate-50"
                                                     >
                                                         <Bell size={12} className="inline mr-1" /> {t('contract.setReminder')}
                                                     </button>
                                                     <button
-                                                        onClick={(e) => { e.stopPropagation(); alert(t('contract.markedComplete')); }}
+                                                        onClick={(e) => { e.stopPropagation(); toast.success(t('contract.markedComplete')); }}
                                                         className="flex-1 bg-blue-600 text-white py-2 rounded-md text-xs font-semibold hover:bg-blue-700 shadow-sm shadow-blue-200"
                                                     >
                                                         {t('contract.markComplete')}

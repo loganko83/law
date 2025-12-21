@@ -7,6 +7,7 @@ import { AlertTriangle, HelpCircle, CheckCircle, Share2, Mail, FileText, ShieldA
 import { motion } from 'framer-motion';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import { useToast } from '../components/Toast';
 
 interface ReportProps {
   analysis: ContractAnalysis;
@@ -15,6 +16,7 @@ interface ReportProps {
 
 export const Report: React.FC<ReportProps> = ({ analysis, onDone }) => {
   const { t } = useTranslation();
+  const toast = useToast();
   const [displayScore, setDisplayScore] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -68,7 +70,7 @@ export const Report: React.FC<ReportProps> = ({ analysis, onDone }) => {
       pdf.save(`SafeContract_Report_${analysis.score}_${timestamp}.pdf`);
     } catch (e) {
       console.error('PDF export failed:', e);
-      alert(t('common.error'));
+      toast.error(t('common.error'));
     } finally {
       window.scrollTo(0, originalScrollPos);
       setIsExporting(false);
@@ -116,7 +118,7 @@ export const Report: React.FC<ReportProps> = ({ analysis, onDone }) => {
           }
       } else {
           navigator.clipboard.writeText(`${shareData.title}\n\n${shareData.text}`);
-          alert(t('report.copiedToClipboard', 'Report copied to clipboard.'));
+          toast.success(t('report.copiedToClipboard', 'Report copied to clipboard.'));
       }
   };
 

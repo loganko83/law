@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './i18n';
 import App from './App';
+import { registerServiceWorker, setupInstallPrompt } from './services/registerSW';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -14,3 +15,9 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// Register service worker for PWA
+if (import.meta.env.PROD) {
+  registerServiceWorker();
+  setupInstallPrompt();
+}

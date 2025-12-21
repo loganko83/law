@@ -13,6 +13,8 @@ import { LegalQA } from './views/LegalQA';
 import { DocuSignSigning } from './views/DocuSignSigning';
 import { Contract, ViewState, ContractAnalysis, ContractStatus, UserProfile } from './types';
 import { MOCK_CONTRACTS, MOCK_ANALYSIS_RESULT, STANDARD_TEMPLATES } from './constants';
+import { ToastProvider } from './components/Toast';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>('HOME');
@@ -243,16 +245,24 @@ const App: React.FC = () => {
   // Full screen views without bottom nav
   if (['DETAIL', 'DOCUMENT', 'TEMPLATE_PREVIEW', 'CONTENT_PROOF', 'LEGAL_QA', 'DOCUSIGN_SIGNING'].includes(currentView)) {
     return (
-      <div className="max-w-md mx-auto min-h-screen bg-slate-50 shadow-2xl">
-        {renderContent()}
-      </div>
+      <ErrorBoundary>
+        <ToastProvider>
+          <div className="max-w-md mx-auto min-h-screen bg-slate-50 shadow-2xl">
+            {renderContent()}
+          </div>
+        </ToastProvider>
+      </ErrorBoundary>
     );
   }
 
   return (
-    <Layout currentView={currentView} onChangeView={handleNavigate}>
-      {renderContent()}
-    </Layout>
+    <ErrorBoundary>
+      <ToastProvider>
+        <Layout currentView={currentView} onChangeView={handleNavigate}>
+          {renderContent()}
+        </Layout>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 };
 

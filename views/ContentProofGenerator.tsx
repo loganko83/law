@@ -5,6 +5,7 @@ import { Button } from '../components/Button';
 import { motion } from 'framer-motion';
 import { GoogleGenAI } from "@google/genai";
 import { UserProfile } from '../types';
+import { useToast } from '../components/Toast';
 
 interface ContentProofGeneratorProps {
   userProfile?: UserProfile;
@@ -13,6 +14,7 @@ interface ContentProofGeneratorProps {
 
 export const ContentProofGenerator: React.FC<ContentProofGeneratorProps> = ({ userProfile, onBack }) => {
   const { t } = useTranslation();
+  const toast = useToast();
   const [step, setStep] = useState<'FORM' | 'GENERATING' | 'RESULT'>('FORM');
   const [formData, setFormData] = useState({
     sender: userProfile?.name || '', // Pre-fill from profile
@@ -90,7 +92,7 @@ ${userContext}
       }
     } catch (error) {
       console.error("Generation error:", error);
-      alert(t('contentProof.generationError', 'An error occurred while generating the document. Please try again.'));
+      toast.error(t('contentProof.generationError', 'An error occurred while generating the document. Please try again.'));
       setStep('FORM');
     }
   };
@@ -148,7 +150,7 @@ ${userContext}
         </div>
 
         <div className="p-4 bg-white border-t border-slate-100 flex gap-3 max-w-2xl mx-auto w-full">
-          <Button variant="outline" fullWidth onClick={() => alert('PDF conversion feature will be available soon. Please copy the text to use.')}>
+          <Button variant="outline" fullWidth onClick={() => toast.info('PDF conversion feature will be available soon. Please copy the text to use.')}>
             <Download size={18} /> {t('contentProof.savePdf')}
           </Button>
           <Button fullWidth onClick={() => setStep('FORM')}>
