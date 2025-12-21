@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ContractAnalysis, RiskLevel, RiskPoint } from '../types';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { AlertTriangle, HelpCircle, CheckCircle, Share2, Mail, FileText, ShieldAlert, ShieldCheck, Info } from 'lucide-react';
+import { AlertTriangle, HelpCircle, CheckCircle, Share2, Mail, FileText, ShieldAlert, ShieldCheck, Info, Download, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface ReportProps {
   analysis: ContractAnalysis;
@@ -14,6 +16,64 @@ interface ReportProps {
 export const Report: React.FC<ReportProps> = ({ analysis, onDone }) => {
   const { t } = useTranslation();
   const [displayScore, setDisplayScore] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const handleExportPDF = async () => {
+    if (!contentRef.current || isExporting) return;
+
+    setIsExporting(true);
+    const originalScrollPos = window.scrollY;
+
+    try {
+      window.scrollTo(0, 0);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      const canvas = await html2canvas(contentRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#F8FAFC',
+        windowHeight: contentRef.current.scrollHeight + 50
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.setProperties({
+        title: 'SafeContract AI Analysis Report',
+        subject: 'Contract Safety Analysis',
+        author: 'SafeContract',
+        creator: 'SafeContract AI Service'
+      });
+
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      const timestamp = new Date().toISOString().split('T')[0];
+      pdf.save(`SafeContract_Report_${analysis.score}_${timestamp}.pdf`);
+    } catch (e) {
+      console.error('PDF export failed:', e);
+      alert(t('common.error'));
+    } finally {
+      window.scrollTo(0, originalScrollPos);
+      setIsExporting(false);
+    }
+  };
 
   useEffect(() => {
     // Simple count-up animation
@@ -82,6 +142,7 @@ SafeContract - ${t('app.tagline')}
 
   return (
     <div className="bg-slate-50 min-h-screen pb-32">
+       <div ref={contentRef}>
        {/* Top Score Section */}
        <div className={`pt-10 pb-12 px-6 flex flex-col items-center justify-center rounded-b-[2.5rem] shadow-sm border-b border-slate-100 bg-white`}>
             <motion.div 
@@ -201,14 +262,28 @@ SafeContract - ${t('app.tagline')}
                 </div>
             </motion.section>
        </div>
+       </div>
 
        {/* Actions */}
        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 p-4 z-20 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] max-w-md mx-auto">
             <div className="flex gap-3">
-                <Button variant="outline" className="flex-1 border-slate-200" onClick={handleShare}>
+                <Button
+                    variant="outline"
+                    className="flex-1 border-slate-200"
+                    onClick={handleExportPDF}
+                    disabled={isExporting}
+                    testId="btn-export-pdf"
+                >
+                    {isExporting ? (
+                        <><Loader2 size={18} className="animate-spin" /> <span className="ml-2">{t('report.exporting')}</span></>
+                    ) : (
+                        <><Download size={18} /> <span className="ml-2">PDF</span></>
+                    )}
+                </Button>
+                <Button variant="outline" className="flex-1 border-slate-200" onClick={handleShare} testId="btn-share-report">
                     <Share2 size={18} /> <span className="ml-2">{t('report.share')}</span>
                 </Button>
-                <Button fullWidth onClick={onDone} className="flex-[2]">
+                <Button fullWidth onClick={onDone} className="flex-[2]" testId="btn-done-report">
                     {t('report.done')}
                 </Button>
             </div>

@@ -134,6 +134,7 @@
     "questions": "추천 질문",
     "share": "공유",
     "done": "확인 완료",
+    "exporting": "내보내는 중...",
     "riskLevels": {
       "high": "위험",
       "medium": "주의",
