@@ -48,3 +48,22 @@ coverage/
 *.tmp
 *.temp
 .cache/
+
+# Screenshots and debug images
+*-screenshot.png
+*-final.png
+*-test.png
+final-*.png
+monitor-*.png
+health-*.png
+
+# Backup and test HTML files
+*-backup.html
+*-fixed.html
+*-new.html
+monitoring-*.html
+
+# Nginx config backups
+nginx-*.conf
+*-nginx.conf
+*-storydot-*.conf
