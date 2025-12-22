@@ -23,15 +23,15 @@ Each task includes priority, effort estimate, and dependencies.
 
 | ID | Task | Priority | Effort | Status | Dependencies |
 |----|------|----------|--------|--------|--------------|
-| BE-001 | Initialize FastAPI project structure | P0 | M | [ ] | - |
-| BE-002 | Create config.py with environment loading | P0 | S | [ ] | BE-001 |
-| BE-003 | Set up SQLAlchemy with async support | P0 | M | [ ] | BE-001 |
-| BE-004 | Configure Alembic migrations | P0 | M | [ ] | BE-003 |
+| BE-001 | Initialize FastAPI project structure | P0 | M | [x] | - |
+| BE-002 | Create config.py with environment loading | P0 | S | [x] | BE-001 |
+| BE-003 | Set up SQLAlchemy with async support | P0 | M | [x] | BE-001 |
+| BE-004 | Configure Alembic migrations | P0 | M | [x] | BE-003 |
 | BE-005 | Create Redis connection service | P1 | S | [ ] | BE-001 |
-| BE-006 | Set up Docker Compose (postgres, redis) | P0 | M | [ ] | - |
+| BE-006 | Set up Docker Compose (postgres, redis) | P0 | M | [x] | - |
 | BE-007 | Configure logging (structlog) | P1 | S | [ ] | BE-001 |
-| BE-008 | Create requirements.txt | P0 | XS | [ ] | BE-001 |
-| BE-009 | Create Dockerfile for backend | P1 | S | [ ] | BE-001 |
+| BE-008 | Create requirements.txt | P0 | XS | [x] | BE-001 |
+| BE-009 | Create Dockerfile for backend | P1 | S | [x] | BE-001 |
 
 **Sprint 1.1 Deliverables**:
 ```bash
@@ -52,19 +52,19 @@ backend/
 
 | ID | Task | Priority | Effort | Status | Dependencies |
 |----|------|----------|--------|--------|--------------|
-| AUTH-001 | Create User SQLAlchemy model | P0 | M | [ ] | BE-003 |
-| AUTH-002 | Create UserProfile embedded model | P0 | S | [ ] | AUTH-001 |
-| AUTH-003 | Create Pydantic schemas (UserCreate, UserResponse) | P0 | S | [ ] | AUTH-001 |
-| AUTH-004 | Implement bcrypt password hashing | P0 | S | [ ] | - |
-| AUTH-005 | Generate RS256 JWT key pair | P0 | S | [ ] | - |
-| AUTH-006 | Create JWT token service | P0 | M | [ ] | AUTH-005 |
-| AUTH-007 | Implement refresh token rotation | P0 | M | [ ] | AUTH-006 |
-| AUTH-008 | Create POST /auth/register endpoint | P0 | M | [ ] | AUTH-003, AUTH-004 |
-| AUTH-009 | Create POST /auth/login endpoint | P0 | M | [ ] | AUTH-006 |
-| AUTH-010 | Create POST /auth/refresh endpoint | P0 | M | [ ] | AUTH-007 |
+| AUTH-001 | Create User SQLAlchemy model | P0 | M | [x] | BE-003 |
+| AUTH-002 | Create UserProfile embedded model | P0 | S | [x] | AUTH-001 |
+| AUTH-003 | Create Pydantic schemas (UserCreate, UserResponse) | P0 | S | [x] | AUTH-001 |
+| AUTH-004 | Implement bcrypt password hashing | P0 | S | [x] | - |
+| AUTH-005 | Generate RS256 JWT key pair | P0 | S | [x] | - |
+| AUTH-006 | Create JWT token service | P0 | M | [x] | AUTH-005 |
+| AUTH-007 | Implement refresh token rotation | P0 | M | [x] | AUTH-006 |
+| AUTH-008 | Create POST /auth/register endpoint | P0 | M | [x] | AUTH-003, AUTH-004 |
+| AUTH-009 | Create POST /auth/login endpoint | P0 | M | [x] | AUTH-006 |
+| AUTH-010 | Create POST /auth/refresh endpoint | P0 | M | [x] | AUTH-007 |
 | AUTH-011 | Create POST /auth/logout endpoint | P1 | S | [ ] | AUTH-006 |
 | AUTH-012 | Add rate limiting middleware (Redis) | P1 | M | [ ] | BE-005 |
-| AUTH-013 | Create auth dependency (get_current_user) | P0 | S | [ ] | AUTH-006 |
+| AUTH-013 | Create auth dependency (get_current_user) | P0 | S | [x] | AUTH-006 |
 | AUTH-014 | Write unit tests for auth | P1 | L | [ ] | AUTH-008..011 |
 
 **Files to Create**:
@@ -83,20 +83,20 @@ backend/app/utils/security.py
 
 | ID | Task | Priority | Effort | Status | Dependencies |
 |----|------|----------|--------|--------|--------------|
-| CTR-001 | Create Contract SQLAlchemy model | P0 | M | [ ] | BE-003 |
-| CTR-002 | Create ContractType enum | P0 | XS | [ ] | - |
-| CTR-003 | Create ContractStatus enum | P0 | XS | [ ] | - |
-| CTR-004 | Create ContractDocument model | P0 | M | [ ] | CTR-001 |
-| CTR-005 | Create ContractParty model | P1 | S | [ ] | CTR-001 |
+| CTR-001 | Create Contract SQLAlchemy model | P0 | M | [x] | BE-003 |
+| CTR-002 | Create ContractType enum | P0 | XS | [x] | - |
+| CTR-003 | Create ContractStatus enum | P0 | XS | [x] | - |
+| CTR-004 | Create ContractDocument model | P0 | M | [x] | CTR-001 |
+| CTR-005 | Create ContractParty model | P1 | S | [x] | CTR-001 |
 | CTR-006 | Create TimelineEvent model | P1 | S | [ ] | CTR-001 |
-| CTR-007 | Create Pydantic schemas for Contract | P0 | M | [ ] | CTR-001..006 |
-| CTR-008 | Create POST /contracts endpoint | P0 | M | [ ] | CTR-007 |
-| CTR-009 | Create GET /contracts endpoint (list) | P0 | M | [ ] | CTR-007 |
-| CTR-010 | Add pagination (limit/offset) | P0 | S | [ ] | CTR-009 |
-| CTR-011 | Add filtering (status, type, date) | P1 | M | [ ] | CTR-009 |
-| CTR-012 | Create GET /contracts/{id} endpoint | P0 | S | [ ] | CTR-007 |
-| CTR-013 | Create PATCH /contracts/{id} endpoint | P0 | M | [ ] | CTR-007 |
-| CTR-014 | Create DELETE /contracts/{id} (soft delete) | P0 | S | [ ] | CTR-007 |
+| CTR-007 | Create Pydantic schemas for Contract | P0 | M | [x] | CTR-001..006 |
+| CTR-008 | Create POST /contracts endpoint | P0 | M | [x] | CTR-007 |
+| CTR-009 | Create GET /contracts endpoint (list) | P0 | M | [x] | CTR-007 |
+| CTR-010 | Add pagination (limit/offset) | P0 | S | [x] | CTR-009 |
+| CTR-011 | Add filtering (status, type, date) | P1 | M | [x] | CTR-009 |
+| CTR-012 | Create GET /contracts/{id} endpoint | P0 | S | [x] | CTR-007 |
+| CTR-013 | Create PATCH /contracts/{id} endpoint | P0 | M | [x] | CTR-007 |
+| CTR-014 | Create DELETE /contracts/{id} (soft delete) | P0 | S | [x] | CTR-007 |
 | CTR-015 | Write unit tests for contracts | P1 | L | [ ] | CTR-008..014 |
 
 **Files to Create**:
@@ -169,9 +169,9 @@ backend/app/api/v1/analysis.py
 
 | ID | Task | Priority | Effort | Status | Dependencies |
 |----|------|----------|--------|--------|--------------|
-| FE-001 | Create API client service (axios) | P0 | M | [ ] | - |
-| FE-002 | Add auth interceptor for JWT | P0 | S | [ ] | FE-001 |
-| FE-003 | Add refresh token interceptor | P0 | M | [ ] | FE-002 |
+| FE-001 | Create API client service (axios) | P0 | M | [x] | - |
+| FE-002 | Add auth interceptor for JWT | P0 | S | [x] | FE-001 |
+| FE-003 | Add refresh token interceptor | P0 | M | [x] | FE-002 |
 | FE-004 | Create AuthContext with state | P0 | M | [ ] | FE-001 |
 | FE-005 | Create Login view | P0 | M | [ ] | FE-004 |
 | FE-006 | Create Register view | P0 | M | [ ] | FE-004 |
@@ -209,14 +209,14 @@ src/views/ContractDetail.tsx
 
 | ID | Task | Priority | Effort | Status | Dependencies |
 |----|------|----------|--------|--------|--------------|
-| DID-001 | Obtain DID BaaS API key | P0 | XS | [ ] | - |
-| DID-002 | Create DidBaasClient Python class | P0 | M | [ ] | BE-001 |
-| DID-003 | Implement issue_did() method | P0 | M | [ ] | DID-002 |
-| DID-004 | Implement verify_did() method | P0 | S | [ ] | DID-002 |
-| DID-005 | Implement get_did_document() method | P1 | S | [ ] | DID-002 |
-| DID-006 | Implement issue_w3c_credential() method | P0 | M | [ ] | DID-002 |
-| DID-007 | Implement verify_credential() method | P0 | S | [ ] | DID-002 |
-| DID-008 | Add error handling for DID BaaS calls | P0 | S | [ ] | DID-002..007 |
+| DID-001 | Obtain DID BaaS API key | P0 | XS | [~] | - |
+| DID-002 | Create DidBaasClient Python class | P0 | M | [x] | BE-001 |
+| DID-003 | Implement issue_did() method | P0 | M | [x] | DID-002 |
+| DID-004 | Implement verify_did() method | P0 | S | [x] | DID-002 |
+| DID-005 | Implement get_did_document() method | P1 | S | [x] | DID-002 |
+| DID-006 | Implement issue_w3c_credential() method | P0 | M | [x] | DID-002 |
+| DID-007 | Implement verify_credential() method | P0 | S | [x] | DID-002 |
+| DID-008 | Add error handling for DID BaaS calls | P0 | S | [x] | DID-002..007 |
 | DID-009 | Write integration tests | P1 | M | [ ] | DID-003..007 |
 
 **Files to Create**:
@@ -231,11 +231,11 @@ backend/tests/test_did_baas.py
 
 | ID | Task | Priority | Effort | Status | Dependencies |
 |----|------|----------|--------|--------|--------------|
-| DID-010 | Add did_address field to User model | P0 | S | [ ] | AUTH-001 |
-| DID-011 | Add did_status enum (NONE, PENDING, CONFIRMED) | P0 | S | [ ] | AUTH-001 |
-| DID-012 | Create Alembic migration for DID fields | P0 | S | [ ] | DID-010, DID-011 |
-| DID-013 | Create POST /users/{id}/did endpoint | P0 | M | [ ] | DID-003 |
-| DID-014 | Create GET /users/{id}/did/status endpoint | P0 | S | [ ] | DID-004 |
+| DID-010 | Add did_address field to User model | P0 | S | [x] | AUTH-001 |
+| DID-011 | Add did_status enum (NONE, PENDING, CONFIRMED) | P0 | S | [x] | AUTH-001 |
+| DID-012 | Create Alembic migration for DID fields | P0 | S | [~] | DID-010, DID-011 |
+| DID-013 | Create POST /users/{id}/did endpoint | P0 | M | [x] | DID-003 |
+| DID-014 | Create GET /users/{id}/did/status endpoint | P0 | S | [x] | DID-004 |
 | DID-015 | Implement DID status polling logic | P1 | M | [ ] | DID-014 |
 | DID-016 | Update auth_level after DID confirmation | P0 | S | [ ] | DID-015 |
 | DID-017 | Add DID creation UI to Profile.tsx | P0 | M | [ ] | DID-013 |
@@ -254,16 +254,16 @@ src/views/Profile.tsx
 
 | ID | Task | Priority | Effort | Status | Dependencies |
 |----|------|----------|--------|--------|--------------|
-| SIGN-001 | Create ContractSignature model | P0 | M | [ ] | CTR-001 |
-| SIGN-002 | Create ContractSignature schema | P0 | S | [ ] | SIGN-001 |
-| SIGN-003 | Create SafeCon issuer DID (one-time) | P0 | M | [ ] | DID-003 |
+| SIGN-001 | Create ContractSignature model | P0 | M | [x] | CTR-001 |
+| SIGN-002 | Create ContractSignature schema | P0 | S | [x] | SIGN-001 |
+| SIGN-003 | Create SafeCon issuer DID (one-time) | P0 | M | [~] | DID-003 |
 | SIGN-004 | Register contract-signature-v1 schema | P0 | M | [ ] | DID-002 |
-| SIGN-005 | Create document hash before signing | P0 | S | [ ] | DOC-006 |
-| SIGN-006 | Issue W3C VC for signature | P0 | L | [ ] | DID-006, SIGN-005 |
-| SIGN-007 | Store credential ID in database | P0 | S | [ ] | SIGN-006 |
-| SIGN-008 | Create POST /contracts/{id}/sign endpoint | P0 | M | [ ] | SIGN-006 |
-| SIGN-009 | Create GET /contracts/{id}/signatures endpoint | P0 | S | [ ] | SIGN-001 |
-| SIGN-010 | Create GET /signatures/{id}/verify endpoint | P0 | M | [ ] | DID-007 |
+| SIGN-005 | Create document hash before signing | P0 | S | [x] | DOC-006 |
+| SIGN-006 | Issue W3C VC for signature | P0 | L | [x] | DID-006, SIGN-005 |
+| SIGN-007 | Store credential ID in database | P0 | S | [x] | SIGN-006 |
+| SIGN-008 | Create POST /contracts/{id}/sign endpoint | P0 | M | [x] | SIGN-006 |
+| SIGN-009 | Create GET /contracts/{id}/signatures endpoint | P0 | S | [x] | SIGN-001 |
+| SIGN-010 | Create GET /signatures/{id}/verify endpoint | P0 | M | [x] | DID-007 |
 | SIGN-011 | Update DocuSignSigning.tsx for real signing | P0 | L | [ ] | SIGN-008 |
 | SIGN-012 | Add signature verification UI | P1 | M | [ ] | SIGN-010 |
 
@@ -280,13 +280,13 @@ backend/app/api/v1/signatures.py
 
 | ID | Task | Priority | Effort | Status | Dependencies |
 |----|------|----------|--------|--------|--------------|
-| CHAIN-001 | Create BlockchainRecord model | P0 | M | [ ] | CTR-001 |
-| CHAIN-002 | Create BlockchainRecord schema | P0 | S | [ ] | CHAIN-001 |
-| CHAIN-003 | Extract tx_hash from VC response | P0 | S | [ ] | SIGN-006 |
-| CHAIN-004 | Store blockchain details in DB | P0 | S | [ ] | CHAIN-003 |
-| CHAIN-005 | Create POST /contracts/{id}/notarize endpoint | P0 | M | [ ] | CHAIN-004 |
-| CHAIN-006 | Create GET /contracts/{id}/blockchain endpoint | P0 | S | [ ] | CHAIN-001 |
-| CHAIN-007 | Create GET /verify/{hash} public endpoint | P0 | M | [ ] | CHAIN-001 |
+| CHAIN-001 | Create BlockchainRecord model | P0 | M | [x] | CTR-001 |
+| CHAIN-002 | Create BlockchainRecord schema | P0 | S | [x] | CHAIN-001 |
+| CHAIN-003 | Extract tx_hash from VC response | P0 | S | [x] | SIGN-006 |
+| CHAIN-004 | Store blockchain details in DB | P0 | S | [x] | CHAIN-003 |
+| CHAIN-005 | Create POST /contracts/{id}/notarize endpoint | P0 | M | [x] | CHAIN-004 |
+| CHAIN-006 | Create GET /contracts/{id}/blockchain endpoint | P0 | S | [x] | CHAIN-001 |
+| CHAIN-007 | Create GET /verify/{hash} public endpoint | P0 | M | [x] | CHAIN-001 |
 | CHAIN-008 | Display blockchain info in ContractDetail | P0 | M | [ ] | CHAIN-006 |
 | CHAIN-009 | Create public Verify.tsx page | P1 | M | [ ] | CHAIN-007 |
 
@@ -416,6 +416,18 @@ backend/templates/certificate.html
 ---
 
 ## Task Summary
+
+### Progress (Updated: 2024-12-22)
+
+| Phase | Total | Done | In Progress | Remaining |
+|-------|-------|------|-------------|-----------|
+| Phase 1 | 56 | 36 | 0 | 20 |
+| Phase 2 | 44 | 24 | 3 | 17 |
+| Phase 3 | 33 | 0 | 0 | 33 |
+| Phase 4 | 14 | 0 | 0 | 14 |
+| **Total** | **147** | **60** | **3** | **84** |
+
+**Completion: 41%**
 
 ### By Phase
 
