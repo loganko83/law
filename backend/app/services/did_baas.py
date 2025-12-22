@@ -2,13 +2,13 @@
 import httpx
 from typing import Optional, Dict, Any, List
 from datetime import datetime
-import logging
 import uuid
 import hashlib
 
 from app.core.config import settings
+from app.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger("did_baas")
 
 
 # Mock mode flag - enabled when API key is not configured

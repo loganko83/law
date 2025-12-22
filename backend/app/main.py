@@ -4,18 +4,32 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.core.error_handlers import register_exception_handlers
+from app.core.logging import setup_logging, get_logger, RequestLoggingMiddleware
 from app.db.base import init_db, close_db
 from app.api import auth, contracts, analysis, did, signatures, blockchain, parties, versions, sharing, templates, subscriptions, b2b
+
+# Initialize structured logging
+setup_logging()
+logger = get_logger("main")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
     # Startup
+    logger.info(
+        "application_startup",
+        app_name=settings.APP_NAME,
+        version=settings.APP_VERSION,
+        debug=settings.DEBUG
+    )
     await init_db()
+    logger.info("database_connected")
     yield
     # Shutdown
+    logger.info("application_shutdown")
     await close_db()
+    logger.info("database_disconnected")
 
 
 # Create FastAPI app
@@ -34,6 +48,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add request logging middleware
+app.add_middleware(RequestLoggingMiddleware)
 
 # Register global exception handlers
 register_exception_handlers(app)

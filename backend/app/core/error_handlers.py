@@ -1,5 +1,4 @@
 """Global exception handlers for FastAPI application."""
-import logging
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -7,8 +6,9 @@ from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.exceptions import SafeConException, ErrorCode
+from app.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger("error_handler")
 
 
 def create_error_response(
