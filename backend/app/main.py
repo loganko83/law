@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.core.config import settings
+from app.core.error_handlers import register_exception_handlers
 from app.db.base import init_db, close_db
 from app.api import auth, contracts, analysis, did, signatures, blockchain, parties, versions, sharing, templates, subscriptions, b2b
 
@@ -33,6 +34,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register global exception handlers
+register_exception_handlers(app)
 
 # Include routers
 app.include_router(auth.router)

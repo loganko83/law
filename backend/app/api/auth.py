@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -22,6 +22,12 @@ from app.core.security import (
     create_refresh_token,
     verify_token
 )
+from app.core.exceptions import (
+    InvalidCredentialsError,
+    TokenInvalidError,
+    UserNotFoundError,
+    UserAlreadyExistsError
+)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 security = HTTPBearer()
@@ -36,11 +42,7 @@ async def get_current_user(
     token_data = verify_token(token, "access")
 
     if token_data is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
+        raise TokenInvalidError("Invalid or expired token")
 
     result = await db.execute(
         select(User)
@@ -50,10 +52,7 @@ async def get_current_user(
     user = result.scalar_one_or_none()
 
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found"
-        )
+        raise UserNotFoundError(str(token_data.user_id))
 
     return user
 
@@ -69,10 +68,7 @@ async def register(
         select(User).where(User.email == user_data.email)
     )
     if result.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
+        raise UserAlreadyExistsError(user_data.email)
 
     # Create new user
     user = User(
@@ -100,10 +96,7 @@ async def login(
     user = result.scalar_one_or_none()
 
     if user is None or not verify_password(login_data.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
-        )
+        raise InvalidCredentialsError()
 
     # Update last login
     user.last_login_at = datetime.utcnow()
@@ -136,10 +129,7 @@ async def refresh_token(
     payload = verify_token(token_data.refresh_token, "refresh")
 
     if payload is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token"
-        )
+        raise TokenInvalidError("Invalid or expired refresh token")
 
     # Get user
     result = await db.execute(
@@ -148,10 +138,7 @@ async def refresh_token(
     user = result.scalar_one_or_none()
 
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found"
-        )
+        raise UserNotFoundError(str(payload.user_id))
 
     # Create new tokens
     new_token_data = {

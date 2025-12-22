@@ -1,5 +1,5 @@
 """DID management API endpoints."""
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -12,6 +12,13 @@ from app.db.base import get_db
 from app.models.user import User, UserDID, DidStatus, AuthLevel
 from app.api.auth import get_current_user
 from app.services.did_baas import get_did_baas_client, DidBaasClient, DidBaasError
+from app.core.exceptions import (
+    DIDNotFoundError,
+    DIDAlreadyExistsError,
+    DIDServiceError,
+    BusinessLogicError,
+    ErrorCode
+)
 
 router = APIRouter(prefix="/did", tags=["DID Management"])
 
@@ -66,10 +73,7 @@ async def issue_did(
     """
     # Check if user already has a DID
     if current_user.user_did:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User already has a DID"
-        )
+        raise DIDAlreadyExistsError()
 
     try:
         # Issue DID via DID BaaS
@@ -78,7 +82,7 @@ async def issue_did(
 
         did_address = result.get("didAddress")
         if not did_address:
-            raise DidBaasError("No DID address returned from DID BaaS")
+            raise DIDServiceError("No DID address returned from DID BaaS")
 
         # Create UserDID record
         user_did = UserDID(
@@ -97,10 +101,7 @@ async def issue_did(
         )
 
     except DidBaasError as e:
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=f"DID BaaS error: {e.message}"
-        )
+        raise DIDServiceError(e.message, status_code=e.status_code)
 
 
 @router.get("/status", response_model=DidStatusResponse)
@@ -121,10 +122,7 @@ async def get_did_status(
     user_did = result.scalar_one_or_none()
 
     if not user_did:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User does not have a DID"
-        )
+        raise DIDNotFoundError()
 
     # If pending, check for confirmation
     if user_did.status == DidStatus.PENDING:
@@ -181,10 +179,7 @@ async def verify_did(
                 on_chain_status=None,
                 message="DID not found"
             )
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=f"Verification error: {e.message}"
-        )
+        raise DIDServiceError(e.message, status_code=e.status_code)
 
 
 @router.get("/document", response_model=DidDocumentResponse)
@@ -201,10 +196,7 @@ async def get_did_document(
     user_did = result.scalar_one_or_none()
 
     if not user_did:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User does not have a DID"
-        )
+        raise DIDNotFoundError()
 
     try:
         document = await did_client.get_did_document(user_did.did_address)
@@ -220,10 +212,7 @@ async def get_did_document(
         )
 
     except DidBaasError as e:
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=f"Failed to get DID document: {e.message}"
-        )
+        raise DIDServiceError(f"Failed to get DID document: {e.message}", status_code=e.status_code)
 
 
 @router.post("/revoke")
@@ -241,15 +230,12 @@ async def revoke_did(
     user_did = result.scalar_one_or_none()
 
     if not user_did:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User does not have a DID"
-        )
+        raise DIDNotFoundError()
 
     if user_did.status == DidStatus.REVOKED:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="DID is already revoked"
+        raise BusinessLogicError(
+            message="DID is already revoked",
+            error_code=ErrorCode.DID_REVOKED
         )
 
     try:
@@ -261,10 +247,7 @@ async def revoke_did(
 
         await db.flush()
 
-        return {"message": "DID revoked successfully"}
+        return {"success": True, "message": "DID revoked successfully"}
 
     except DidBaasError as e:
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=f"Failed to revoke DID: {e.message}"
-        )
+        raise DIDServiceError(f"Failed to revoke DID: {e.message}", status_code=e.status_code)
