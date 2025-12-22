@@ -158,9 +158,9 @@ class Payment(Base):
     provider_invoice_id = Column(String(255), nullable=True)
     receipt_url = Column(String(500), nullable=True)
 
-    # Metadata
+    # Additional data
     description = Column(Text, nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    payment_metadata = Column(JSONB, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
