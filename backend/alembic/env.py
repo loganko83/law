@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 # Import models for autogenerate
-from app.core.database import Base
+from app.db.base import Base
 from app.models import user, contract, analysis, blockchain, signature, subscription, template
 
 # this is the Alembic Config object, which provides
