@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Enum, Text, Boolean
+from sqlalchemy import Column, String, DateTime, Enum, Text, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
@@ -71,7 +71,7 @@ class UserDID(Base):
     __tablename__ = "user_dids"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), nullable=False, unique=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, unique=True)
     did_address = Column(String(255), nullable=False, unique=True)  # did:sw:org:0x...
     did_document = Column(Text, nullable=True)  # JSON string
     status = Column(Enum(DidStatus), default=DidStatus.PENDING)
