@@ -240,7 +240,7 @@ class DidBaasClient:
             self._client = httpx.AsyncClient(
                 base_url=self.base_url,
                 headers={
-                    "Authorization": f"Bearer {self.api_key}",
+                    "X-API-Key": self.api_key,
                     "Content-Type": "application/json"
                 },
                 timeout=self.timeout
