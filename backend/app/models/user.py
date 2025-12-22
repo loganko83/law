@@ -60,18 +60,29 @@ class User(Base):
     user_did = relationship("UserDID", back_populates="user", uselist=False)
 
 
+class DidStatus(str, enum.Enum):
+    NONE = "none"
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    REVOKED = "revoked"
+
+
 class UserDID(Base):
     __tablename__ = "user_dids"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), nullable=False, unique=True)
-    did_uri = Column(String(255), nullable=False, unique=True)  # did:polygon:0x...
-    did_document = Column(Text, nullable=False)  # JSON string
-    public_key_hex = Column(String(130), nullable=True)
-    kms_key_id = Column(String(255), nullable=True)
+    did_address = Column(String(255), nullable=False, unique=True)  # did:sw:org:0x...
+    did_document = Column(Text, nullable=True)  # JSON string
+    status = Column(Enum(DidStatus), default=DidStatus.PENDING)
+
+    # Blockchain info
+    tx_hash = Column(String(66), nullable=True)
+    block_number = Column(String(20), nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    confirmed_at = Column(DateTime, nullable=True)
 
     # Relationship
     user = relationship("User", back_populates="user_did")

@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:3000"]
 
+    # DID BaaS
+    DID_BAAS_URL: str = "https://trendy.storydot.kr/did-baas/api/v1"
+    DID_BAAS_API_KEY: str = ""
+    SAFECON_ISSUER_DID: str = ""
+
     class Config:
         env_file = ".env"
         case_sensitive = True

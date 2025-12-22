@@ -35,7 +35,7 @@ class BlockchainRecord(Base):
     # Blockchain transaction
     tx_hash = Column(String(66), nullable=True)  # 0x...
     block_number = Column(BigInteger, nullable=True)
-    network = Column(String(50), default="polygon")
+    network = Column(String(50), default="xphere")
 
     # Status
     status = Column(Enum(AnchorStatus), default=AnchorStatus.PENDING)

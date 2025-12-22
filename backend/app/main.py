@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.db.base import init_db, close_db
-from app.api import auth, contracts, analysis
+from app.api import auth, contracts, analysis, did, signatures, blockchain, parties, versions, sharing, templates, subscriptions, b2b
 
 
 @asynccontextmanager
@@ -38,6 +38,15 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(contracts.router)
 app.include_router(analysis.router)
+app.include_router(did.router)
+app.include_router(signatures.router)
+app.include_router(blockchain.router)
+app.include_router(parties.router)
+app.include_router(versions.router)
+app.include_router(sharing.router)
+app.include_router(templates.router)
+app.include_router(subscriptions.router)
+app.include_router(b2b.router)
 
 
 @app.get("/")
