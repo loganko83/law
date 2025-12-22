@@ -41,6 +41,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: safecon-api
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=postgresql+asyncpg://safecon:safecon@postgres:5432/safecon
       - REDIS_URL=redis://redis:6379/0
