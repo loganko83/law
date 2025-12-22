@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from datetime import datetime
 
 from app.db.base import get_db
@@ -42,7 +43,9 @@ async def get_current_user(
         )
 
     result = await db.execute(
-        select(User).where(User.id == token_data.user_id)
+        select(User)
+        .options(selectinload(User.user_did))
+        .where(User.id == token_data.user_id)
     )
     user = result.scalar_one_or_none()
 
