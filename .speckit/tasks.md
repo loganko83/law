@@ -217,7 +217,8 @@ src/views/ContractDetail.tsx
 | DID-006 | Implement issue_w3c_credential() method | P0 | M | [x] | DID-002 |
 | DID-007 | Implement verify_credential() method | P0 | S | [x] | DID-002 |
 | DID-008 | Add error handling for DID BaaS calls | P0 | S | [x] | DID-002..007 |
-| DID-009 | Write integration tests | P1 | M | [ ] | DID-003..007 |
+| DID-009 | Write integration tests | P1 | M | [~] | DID-003..007 |
+| DID-010 | Add mock mode for development | P0 | M | [x] | DID-002 |
 
 **Files to Create**:
 ```
@@ -231,13 +232,13 @@ backend/tests/test_did_baas.py
 
 | ID | Task | Priority | Effort | Status | Dependencies |
 |----|------|----------|--------|--------|--------------|
-| DID-010 | Add did_address field to User model | P0 | S | [x] | AUTH-001 |
-| DID-011 | Add did_status enum (NONE, PENDING, CONFIRMED) | P0 | S | [x] | AUTH-001 |
-| DID-012 | Create Alembic migration for DID fields | P0 | S | [~] | DID-010, DID-011 |
-| DID-013 | Create POST /users/{id}/did endpoint | P0 | M | [x] | DID-003 |
-| DID-014 | Create GET /users/{id}/did/status endpoint | P0 | S | [x] | DID-004 |
-| DID-015 | Implement DID status polling logic | P1 | M | [ ] | DID-014 |
-| DID-016 | Update auth_level after DID confirmation | P0 | S | [ ] | DID-015 |
+| DID-011 | Add did_address field to User model | P0 | S | [x] | AUTH-001 |
+| DID-012 | Add did_status enum (NONE, PENDING, CONFIRMED) | P0 | S | [x] | AUTH-001 |
+| DID-013 | Create Alembic migration for DID fields | P0 | S | [x] | DID-011, DID-012 |
+| DID-014 | Create POST /did/issue endpoint | P0 | M | [x] | DID-003 |
+| DID-015 | Create GET /did/status endpoint | P0 | S | [x] | DID-004 |
+| DID-016 | Implement DID status polling logic | P1 | M | [x] | DID-015 |
+| DID-017 | Update auth_level after DID confirmation | P0 | S | [x] | DID-016 |
 | DID-017 | Add DID creation UI to Profile.tsx | P0 | M | [ ] | DID-013 |
 | DID-018 | Show DID status badge in profile | P1 | S | [ ] | DID-017 |
 
@@ -257,15 +258,16 @@ src/views/Profile.tsx
 | SIGN-001 | Create ContractSignature model | P0 | M | [x] | CTR-001 |
 | SIGN-002 | Create ContractSignature schema | P0 | S | [x] | SIGN-001 |
 | SIGN-003 | Create SafeCon issuer DID (one-time) | P0 | M | [~] | DID-003 |
-| SIGN-004 | Register contract-signature-v1 schema | P0 | M | [ ] | DID-002 |
+| SIGN-004 | Register contract-signature-v1 schema | P0 | M | [x] | DID-002 |
 | SIGN-005 | Create document hash before signing | P0 | S | [x] | DOC-006 |
 | SIGN-006 | Issue W3C VC for signature | P0 | L | [x] | DID-006, SIGN-005 |
 | SIGN-007 | Store credential ID in database | P0 | S | [x] | SIGN-006 |
-| SIGN-008 | Create POST /contracts/{id}/sign endpoint | P0 | M | [x] | SIGN-006 |
-| SIGN-009 | Create GET /contracts/{id}/signatures endpoint | P0 | S | [x] | SIGN-001 |
-| SIGN-010 | Create GET /signatures/{id}/verify endpoint | P0 | M | [x] | DID-007 |
-| SIGN-011 | Update DocuSignSigning.tsx for real signing | P0 | L | [ ] | SIGN-008 |
-| SIGN-012 | Add signature verification UI | P1 | M | [ ] | SIGN-010 |
+| SIGN-008 | Create POST /signatures/sign endpoint | P0 | M | [x] | SIGN-006 |
+| SIGN-009 | Create GET /signatures/contract/{id} endpoint | P0 | S | [x] | SIGN-001 |
+| SIGN-010 | Create POST /signatures/verify endpoint | P0 | M | [x] | DID-007 |
+| SIGN-011 | Create POST /signatures/{id}/revoke endpoint | P0 | M | [x] | SIGN-001 |
+| SIGN-012 | Update DocuSignSigning.tsx for real signing | P0 | L | [ ] | SIGN-008 |
+| SIGN-013 | Add signature verification UI | P1 | M | [ ] | SIGN-010 |
 
 **Files to Create**:
 ```
