@@ -47,6 +47,8 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-this-in-production}
       - DEBUG=true
+      - DID_BAAS_URL=https://trendy.storydot.kr/did-baas/api/v1
+      - DID_BAAS_API_KEY=${DID_BAAS_API_KEY}
     ports:
       - "8000:8000"
     volumes:
