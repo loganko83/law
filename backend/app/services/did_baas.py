@@ -42,24 +42,25 @@ class MockDidBaasClient:
         random_hex = hashlib.sha256(str(uuid.uuid4()).encode()).hexdigest()[:40]
         return f"did:sw:test:0x{random_hex}"
 
-    async def issue_did(self, metadata: Dict = None) -> Dict[str, Any]:
+    async def issue_did(self, civil_id: str) -> Dict[str, Any]:
         """Mock DID issuance."""
         did_address = self._generate_mock_did()
         mock_tx_hash = f"0x{hashlib.sha256(did_address.encode()).hexdigest()}"
 
         self._mock_dids[did_address] = {
             "didAddress": did_address,
+            "civilId": civil_id,
             "status": "CONFIRMED",
-            "txHash": mock_tx_hash,
-            "metadata": metadata or {},
-            "createdAt": datetime.utcnow().isoformat() + "Z"
+            "transactionHash": mock_tx_hash,
+            "issuedAt": datetime.utcnow().isoformat() + "Z"
         }
 
         logger.info(f"[MOCK] Issued DID: {did_address}")
         return {
             "didAddress": did_address,
+            "civilId": civil_id,
             "status": "CONFIRMED",
-            "txHash": mock_tx_hash
+            "transactionHash": mock_tx_hash
         }
 
     async def get_did(self, did_address: str) -> Dict[str, Any]:
@@ -289,23 +290,30 @@ class DidBaasClient:
 
     # ==================== DID Operations ====================
 
-    async def issue_did(self, metadata: Dict = None) -> Dict[str, Any]:
+    async def issue_did(self, civil_id: str) -> Dict[str, Any]:
         """
         Issue a new DID.
+
+        Args:
+            civil_id: Unique identifier for the user (e.g., user ID)
 
         Returns:
             {
                 "didAddress": "did:sw:org123:0x1234...",
                 "status": "PENDING",
-                "txHash": null,
+                "transactionHash": "0x...",
                 ...
             }
         """
-        return await self._request(
+        result = await self._request(
             "POST",
-            "/did",
-            json={"metadata": metadata or {}}
+            "/did/issue",
+            json={"civilId": civil_id}
         )
+        # Extract data from wrapped response
+        if "data" in result:
+            return result["data"]
+        return result
 
     async def get_did(self, did_address: str) -> Dict[str, Any]:
         """Get DID details."""

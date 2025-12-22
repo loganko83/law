@@ -73,13 +73,8 @@ async def issue_did(
 
     try:
         # Issue DID via DID BaaS
-        result = await did_client.issue_did(
-            metadata={
-                "userId": str(current_user.id),
-                "email": current_user.email,
-                "type": "safecon-user"
-            }
-        )
+        # Use user ID as civil_id for DID issuance
+        result = await did_client.issue_did(civil_id=str(current_user.id))
 
         did_address = result.get("didAddress")
         if not did_address:
@@ -90,7 +85,7 @@ async def issue_did(
             user_id=current_user.id,
             did_address=did_address,
             status=DidStatus.PENDING,
-            tx_hash=result.get("txHash")
+            tx_hash=result.get("transactionHash")
         )
         db.add(user_did)
         await db.flush()

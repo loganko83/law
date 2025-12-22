@@ -14,27 +14,28 @@ class TestMockDidBaasClient:
     @pytest.mark.asyncio
     async def test_issue_did_success(self, mock_client):
         """Test DID issuance returns valid DID address."""
-        result = await mock_client.issue_did(metadata={"type": "user"})
+        result = await mock_client.issue_did(civil_id="user-123")
 
         assert "didAddress" in result
         assert result["didAddress"].startswith("did:sw:test:0x")
         assert result["status"] == "CONFIRMED"
-        assert "txHash" in result
+        assert "transactionHash" in result
+        assert result["civilId"] == "user-123"
 
     @pytest.mark.asyncio
     async def test_issue_did_unique_addresses(self, mock_client):
         """Test each DID issuance creates unique address."""
-        did1 = await mock_client.issue_did()
-        did2 = await mock_client.issue_did()
+        did1 = await mock_client.issue_did(civil_id="user-1")
+        did2 = await mock_client.issue_did(civil_id="user-2")
 
         assert did1["didAddress"] != did2["didAddress"]
-        assert did1["txHash"] != did2["txHash"]
+        assert did1["transactionHash"] != did2["transactionHash"]
 
     @pytest.mark.asyncio
     async def test_get_did_success(self, mock_client):
         """Test getting DID details."""
         # First issue a DID
-        issued = await mock_client.issue_did()
+        issued = await mock_client.issue_did(civil_id="test-user")
         did_address = issued["didAddress"]
 
         # Then retrieve it
@@ -46,7 +47,7 @@ class TestMockDidBaasClient:
     @pytest.mark.asyncio
     async def test_verify_did_success(self, mock_client):
         """Test DID verification."""
-        issued = await mock_client.issue_did()
+        issued = await mock_client.issue_did(civil_id="verify-test")
 
         result = await mock_client.verify_did(issued["didAddress"])
 
@@ -56,7 +57,7 @@ class TestMockDidBaasClient:
     @pytest.mark.asyncio
     async def test_get_did_document(self, mock_client):
         """Test getting DID Document."""
-        issued = await mock_client.issue_did()
+        issued = await mock_client.issue_did(civil_id="doc-test")
 
         doc = await mock_client.get_did_document(issued["didAddress"])
 
@@ -68,7 +69,7 @@ class TestMockDidBaasClient:
     @pytest.mark.asyncio
     async def test_revoke_did_success(self, mock_client):
         """Test DID revocation."""
-        issued = await mock_client.issue_did()
+        issued = await mock_client.issue_did(civil_id="revoke-test")
 
         result = await mock_client.revoke_did(issued["didAddress"], reason="test")
 
