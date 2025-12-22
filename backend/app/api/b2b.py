@@ -14,6 +14,7 @@ from app.db.base import get_db
 from app.models.user import User
 from app.models.contract import Contract
 from app.models.subscription import UsageRecord
+from app.api.auth import get_current_user
 
 router = APIRouter(prefix="/b2b", tags=["B2B API"])
 
@@ -559,7 +560,3 @@ async def track_api_usage(db: AsyncSession, user_id: UUID):
 
     usage.api_calls += 1
     await db.flush()
-
-
-# Import auth dependency
-from app.api.auth import get_current_user

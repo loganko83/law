@@ -12,6 +12,7 @@ import secrets
 from app.db.base import get_db
 from app.models.user import User
 from app.models.contract import Contract, ContractDocument
+from app.api.auth import get_current_user
 
 router = APIRouter(prefix="/sharing", tags=["Contract Sharing"])
 
@@ -411,7 +412,3 @@ async def get_share_stats(
         "allow_download": share_link.allow_download,
         "password_protected": share_link.password_hash is not None
     }
-
-
-# Import auth dependency
-from app.api.auth import get_current_user
