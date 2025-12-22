@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SafeCon is a Korean legal contract care service (React/TypeScript) providing AI-powered contract analysis, document scanning (OCR), legal Q&A chatbot, contract management, electronic signing simulation, and content proof generation.
+SafeCon is a Korean legal contract care service providing AI-powered contract analysis, DID-based identity verification, blockchain-anchored signatures, and document management.
 
 ## Development Commands
 
+### Frontend
 ```bash
 npm install          # Install dependencies
 npm run dev          # Start dev server at http://localhost:3000
@@ -15,22 +16,49 @@ npm run build        # Production build (outputs to dist/)
 npm run preview      # Preview production build at http://localhost:4173
 ```
 
-### Testing
-
+### Backend
 ```bash
-npm test                    # Run unit tests in watch mode
-npm run test:unit           # Run unit tests once
-npm run test:coverage       # Run with coverage report
-npm run test:e2e            # Run Playwright E2E tests (requires build first)
-npm run test:e2e:headed     # Run E2E tests with browser visible
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000   # Start API server
+alembic upgrade head                         # Run migrations
+alembic revision --autogenerate -m "msg"     # Create migration
+pytest                                        # Run backend tests
 ```
 
-Single test file: `npx vitest run tests/unit/components/Button.test.tsx`
+### Docker (Full Stack)
+```bash
+docker compose up -d --build    # Start all services
+docker compose down             # Stop all services
+docker logs safecon-api         # View backend logs
+```
+
+### Testing
+```bash
+# Frontend
+npm test                    # Unit tests in watch mode
+npm run test:unit           # Unit tests once
+npm run test:coverage       # With coverage report
+npm run test:e2e            # Playwright E2E tests (requires build)
+npx vitest run tests/unit/components/Button.test.tsx  # Single file
+
+# Backend
+cd backend && pytest tests/ -v
+```
 
 ### Environment Setup
-Create `.env.local` with:
+Frontend `.env.local`:
 ```
 GEMINI_API_KEY=your_api_key_here
+```
+
+Backend `.env` (or via docker-compose):
+```
+DATABASE_URL=postgresql+asyncpg://safecon:safecon@localhost:5432/safecon
+REDIS_URL=redis://localhost:6379/0
+JWT_SECRET_KEY=your-secret-key
+GEMINI_API_KEY=your_api_key_here
+DID_BAAS_URL=https://trendy.storydot.kr/did-baas/api/v1
 ```
 
 ## Architecture
@@ -63,19 +91,46 @@ All global state in `App.tsx` via useState hooks:
 - `UserProfile`: businessType, businessDescription, legalConcerns for RAG
 - `ViewState`: Union of 12 view states (HOME, UPLOAD, REPORT, DETAIL, etc.)
 
-### Services Layer
+### Frontend Services
 ```
 services/
 ├── geminiClient.ts       # Gemini client, chat sessions, RAG support
 ├── contractAnalysis.ts   # Two-phase analysis: pattern detection + AI
 ├── conversationStorage.ts # Chat history persistence (localStorage)
 ├── registerSW.ts         # PWA service worker, offline detection
+├── api.ts                # Backend API client
 ```
 
 **Analysis Pipeline** (contractAnalysis.ts):
 1. `detectPatternRisks()` - Regex matching Korean legal terms
 2. `analyzeContract()` - Gemini generates JSON with summary, safetyScore, risks[], questions[]
 3. `parseAnalysisResponse()` - Merges pattern + AI risks, handles parse failures gracefully
+
+### Backend Structure
+```
+backend/app/
+├── api/           # FastAPI routers (auth, contracts, analysis, did, signatures, blockchain, etc.)
+├── models/        # SQLAlchemy models (user, contract, signature, subscription, template)
+├── schemas/       # Pydantic schemas for request/response validation
+├── services/      # Business logic (ai_analyzer, did_baas)
+├── core/          # Config, security, database setup
+├── crud/          # Database operations
+└── db/            # Database initialization, seeds
+```
+
+**Backend API Endpoints** (12 routers):
+- `/auth` - JWT authentication, user management
+- `/contracts` - Contract CRUD, file upload
+- `/analysis` - AI-powered contract analysis
+- `/did` - DID issuance/verification via DID BaaS
+- `/signatures` - Electronic signature management
+- `/blockchain` - Xphere blockchain anchoring
+- `/parties` - Multi-party contract management
+- `/versions` - Contract version history
+- `/sharing` - Secure contract sharing
+- `/templates` - Contract templates
+- `/subscriptions` - User subscription plans
+- `/b2b` - B2B API endpoints
 
 ### Context Providers
 - `ThemeProvider` (contexts/ThemeContext.tsx) - Dark/light/system theme with localStorage persistence
@@ -108,25 +163,22 @@ tests/
 ### Production URL
 https://trendy.storydot.kr/law/
 
-### Docker Services
-```bash
-docker compose up -d --build    # Start all services
-docker compose down             # Stop all services
-docker logs safecon-frontend    # View frontend logs
-```
-
-Containers: `safecon-frontend` (3000), `safecon-api` (8000), `safecon-db` (PostgreSQL), `safecon-redis`
+### Docker Containers
+| Container | Port | Description |
+|-----------|------|-------------|
+| safecon-frontend | 3000→80 | React app (nginx) |
+| safecon-api | 8000 | FastAPI backend |
+| safecon-db | 5432 | PostgreSQL 16 |
+| safecon-redis | 6379 | Redis 7 |
 
 ### Server Access
 ```bash
 ssh -i C:\server\firstkeypair.pem ubuntu@trendy.storydot.kr
-# Working directory: /mnt/storage/law
+cd /mnt/storage/law
 ```
 
 ### GitHub Actions
-Auto-deploys on push to master/main. Secrets required:
-- `SSH_PRIVATE_KEY`
-- `GEMINI_API_KEY`
+Auto-deploys on push to master/main. Secrets: `SSH_PRIVATE_KEY`, `GEMINI_API_KEY`
 
 ## Spec-Kit Documentation
 
