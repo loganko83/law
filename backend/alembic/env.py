@@ -9,7 +9,7 @@ from alembic import context
 
 # Import models for autogenerate
 from app.core.database import Base
-from app.models import user, contract, analysis, blockchain
+from app.models import user, contract, analysis, blockchain, signature, subscription, template
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
