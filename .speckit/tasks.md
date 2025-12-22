@@ -1,239 +1,457 @@
-# SafeCon Task Breakdown
+# SafeCon Task Breakdown v2.0
 
-## Sprint 1: Gemini RAG Setup (Week 1-2)
+## Overview
 
-### 1.1 Legal Corpus Preparation
-- [ ] **TASK-001**: Research and collect Korean standard contracts
-  - Fair Trade Commission standard terms
-  - Ministry of Employment labor contracts
-  - Real estate standard contracts
-  - Convert to plain text format
+This document contains all actionable tasks organized by phase and sprint.
+Each task includes priority, effort estimate, and dependencies.
 
-- [ ] **TASK-002**: Prepare legal reference documents
-  - Key Civil Code articles (contracts, obligations)
-  - Commercial Code relevant sections
-  - Electronic Signature Act summary
-  - Precedent case summaries
+**Status Legend**:
+- `[ ]` Not started
+- `[~]` In progress
+- `[x]` Complete
+- `[-]` Blocked
 
-### 1.2 Gemini File Search Integration
-- [ ] **TASK-003**: Create File Search service module
-  ```typescript
-  // services/fileSearch.ts
-  - createLegalCorpusStore()
-  - uploadLegalDocument(file, metadata)
-  - searchRelevantClauses(query)
-  ```
+**Priority**: P0=Critical, P1=High, P2=Medium, P3=Low
 
-- [ ] **TASK-004**: Implement corpus initialization script
-  - Upload all legal documents
-  - Add metadata (category, source, date)
-  - Verify indexing completion
+**Effort**: XS=<1hr, S=1-2hr, M=4-8hr, L=1-2days, XL=3-5days
 
-- [ ] **TASK-005**: Create RAG-enhanced analysis function
-  ```typescript
-  // services/contractAnalysis.ts
-  - analyzeContractWithRAG(contractText)
-  - Returns: score, risks, suggestions with citations
-  ```
+---
 
-### 1.3 Upload Flow Integration
-- [ ] **TASK-006**: Update Upload.tsx
-  - Replace mock analysis with real Gemini call
-  - Add loading states for analysis
-  - Handle errors gracefully
+## Phase 1: Backend Foundation
 
-- [ ] **TASK-007**: Update Report.tsx
-  - Display RAG citations
-  - Add "source" links for risk items
-  - Show negotiation scripts from RAG
+### Sprint 1.1: Project Setup (3 days)
 
-## Sprint 2: OCR Integration (Week 2-3)
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| BE-001 | Initialize FastAPI project structure | P0 | M | [ ] | - |
+| BE-002 | Create config.py with environment loading | P0 | S | [ ] | BE-001 |
+| BE-003 | Set up SQLAlchemy with async support | P0 | M | [ ] | BE-001 |
+| BE-004 | Configure Alembic migrations | P0 | M | [ ] | BE-003 |
+| BE-005 | Create Redis connection service | P1 | S | [ ] | BE-001 |
+| BE-006 | Set up Docker Compose (postgres, redis) | P0 | M | [ ] | - |
+| BE-007 | Configure logging (structlog) | P1 | S | [ ] | BE-001 |
+| BE-008 | Create requirements.txt | P0 | XS | [ ] | BE-001 |
+| BE-009 | Create Dockerfile for backend | P1 | S | [ ] | BE-001 |
 
-### 2.1 Browser-based OCR
-- [ ] **TASK-008**: Install and configure Tesseract.js
-  ```bash
-  npm install tesseract.js
-  ```
+**Sprint 1.1 Deliverables**:
+```bash
+backend/
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── config.py
+│   └── database.py
+├── requirements.txt
+├── Dockerfile
+└── docker-compose.yml
+```
 
-- [ ] **TASK-009**: Create OCR service module
-  ```typescript
-  // services/ocr.ts
-  - extractTextFromImage(imageFile): Promise<string>
-  - extractTextFromPDF(pdfFile): Promise<string>
-  - Progress callback support
-  ```
+---
 
-- [ ] **TASK-010**: Add Korean language data
-  - Download kor.traineddata
-  - Configure Tesseract worker
+### Sprint 1.2: User Authentication (5 days)
 
-### 2.2 PDF Processing
-- [ ] **TASK-011**: Implement PDF text extraction
-  - Use pdf.js for native PDF text
-  - Fall back to OCR for scanned PDFs
-  - Handle multi-page documents
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| AUTH-001 | Create User SQLAlchemy model | P0 | M | [ ] | BE-003 |
+| AUTH-002 | Create UserProfile embedded model | P0 | S | [ ] | AUTH-001 |
+| AUTH-003 | Create Pydantic schemas (UserCreate, UserResponse) | P0 | S | [ ] | AUTH-001 |
+| AUTH-004 | Implement bcrypt password hashing | P0 | S | [ ] | - |
+| AUTH-005 | Generate RS256 JWT key pair | P0 | S | [ ] | - |
+| AUTH-006 | Create JWT token service | P0 | M | [ ] | AUTH-005 |
+| AUTH-007 | Implement refresh token rotation | P0 | M | [ ] | AUTH-006 |
+| AUTH-008 | Create POST /auth/register endpoint | P0 | M | [ ] | AUTH-003, AUTH-004 |
+| AUTH-009 | Create POST /auth/login endpoint | P0 | M | [ ] | AUTH-006 |
+| AUTH-010 | Create POST /auth/refresh endpoint | P0 | M | [ ] | AUTH-007 |
+| AUTH-011 | Create POST /auth/logout endpoint | P1 | S | [ ] | AUTH-006 |
+| AUTH-012 | Add rate limiting middleware (Redis) | P1 | M | [ ] | BE-005 |
+| AUTH-013 | Create auth dependency (get_current_user) | P0 | S | [ ] | AUTH-006 |
+| AUTH-014 | Write unit tests for auth | P1 | L | [ ] | AUTH-008..011 |
 
-- [ ] **TASK-012**: Update Upload UI
-  - Show OCR progress bar
-  - Allow text correction after OCR
-  - Preview extracted text before analysis
+**Files to Create**:
+```
+backend/app/models/user.py
+backend/app/schemas/user.py
+backend/app/services/auth.py
+backend/app/api/v1/auth.py
+backend/app/api/deps.py
+backend/app/utils/security.py
+```
 
-## Sprint 3: Backend Foundation (Week 3-4)
+---
 
-### 3.1 FastAPI Project Setup
-- [ ] **TASK-013**: Initialize backend project
-  ```
-  backend/
-  ├── app/
-  │   ├── __init__.py
-  │   ├── main.py
-  │   ├── api/
-  │   ├── core/
-  │   ├── models/
-  │   └── services/
-  └── requirements.txt
-  ```
+### Sprint 1.3: Contract CRUD (5 days)
 
-- [ ] **TASK-014**: Configure PostgreSQL
-  - Create database schema
-  - Set up SQLAlchemy models
-  - Initialize Alembic migrations
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| CTR-001 | Create Contract SQLAlchemy model | P0 | M | [ ] | BE-003 |
+| CTR-002 | Create ContractType enum | P0 | XS | [ ] | - |
+| CTR-003 | Create ContractStatus enum | P0 | XS | [ ] | - |
+| CTR-004 | Create ContractDocument model | P0 | M | [ ] | CTR-001 |
+| CTR-005 | Create ContractParty model | P1 | S | [ ] | CTR-001 |
+| CTR-006 | Create TimelineEvent model | P1 | S | [ ] | CTR-001 |
+| CTR-007 | Create Pydantic schemas for Contract | P0 | M | [ ] | CTR-001..006 |
+| CTR-008 | Create POST /contracts endpoint | P0 | M | [ ] | CTR-007 |
+| CTR-009 | Create GET /contracts endpoint (list) | P0 | M | [ ] | CTR-007 |
+| CTR-010 | Add pagination (limit/offset) | P0 | S | [ ] | CTR-009 |
+| CTR-011 | Add filtering (status, type, date) | P1 | M | [ ] | CTR-009 |
+| CTR-012 | Create GET /contracts/{id} endpoint | P0 | S | [ ] | CTR-007 |
+| CTR-013 | Create PATCH /contracts/{id} endpoint | P0 | M | [ ] | CTR-007 |
+| CTR-014 | Create DELETE /contracts/{id} (soft delete) | P0 | S | [ ] | CTR-007 |
+| CTR-015 | Write unit tests for contracts | P1 | L | [ ] | CTR-008..014 |
 
-- [ ] **TASK-015**: Implement authentication
-  - JWT token generation/validation
-  - User registration endpoint
-  - Login endpoint
-  - Password hashing (bcrypt)
+**Files to Create**:
+```
+backend/app/models/contract.py
+backend/app/models/document.py
+backend/app/schemas/contract.py
+backend/app/api/v1/contracts.py
+```
 
-### 3.2 Core API Endpoints
-- [ ] **TASK-016**: Contract CRUD API
-  ```python
-  POST   /api/contracts        # Create
-  GET    /api/contracts        # List user's contracts
-  GET    /api/contracts/{id}   # Get detail
-  PUT    /api/contracts/{id}   # Update
-  DELETE /api/contracts/{id}   # Delete
-  ```
+---
 
-- [ ] **TASK-017**: Analysis API
-  ```python
-  POST   /api/contracts/{id}/analyze  # Trigger analysis
-  GET    /api/contracts/{id}/analysis # Get analysis result
-  ```
+### Sprint 1.4: File Upload & OCR (5 days)
 
-- [ ] **TASK-018**: Document upload API
-  ```python
-  POST   /api/contracts/{id}/documents  # Upload file
-  GET    /api/contracts/{id}/documents  # List documents
-  ```
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| DOC-001 | Create S3/MinIO storage service | P0 | M | [ ] | BE-001 |
+| DOC-002 | Configure storage bucket and credentials | P0 | S | [ ] | DOC-001 |
+| DOC-003 | Create file upload endpoint | P0 | M | [ ] | DOC-001, CTR-004 |
+| DOC-004 | Implement file type validation | P0 | S | [ ] | DOC-003 |
+| DOC-005 | Implement file size validation (50MB max) | P0 | S | [ ] | DOC-003 |
+| DOC-006 | Create SHA-256 hash utility | P0 | S | [ ] | - |
+| DOC-007 | Generate content hash on upload | P0 | S | [ ] | DOC-006 |
+| DOC-008 | Create OCR service interface | P0 | S | [ ] | - |
+| DOC-009 | Integrate Google Cloud Vision API | P1 | M | [ ] | DOC-008 |
+| DOC-010 | Alternative: Integrate Tesseract (self-hosted) | P2 | L | [ ] | DOC-008 |
+| DOC-011 | Extract text and store in database | P0 | M | [ ] | DOC-009 |
+| DOC-012 | Create GET /documents/{id} endpoint | P1 | S | [ ] | CTR-004 |
+| DOC-013 | Create presigned URL for download | P1 | M | [ ] | DOC-001 |
+| DOC-014 | Write unit tests for documents | P1 | M | [ ] | DOC-003..013 |
 
-## Sprint 4: Frontend-Backend Integration (Week 4-5)
+**Files to Create**:
+```
+backend/app/services/storage.py
+backend/app/services/ocr.py
+backend/app/api/v1/documents.py
+backend/app/utils/hash.py
+```
 
-### 4.1 TanStack Query Setup
-- [ ] **TASK-019**: Install and configure TanStack Query
-  ```bash
-  npm install @tanstack/react-query
-  ```
+---
 
-- [ ] **TASK-020**: Create API client
-  ```typescript
-  // services/api.ts
-  - Base axios/fetch configuration
-  - Auth token interceptor
-  - Error handling
-  ```
+### Sprint 1.5: AI Analysis Integration (5 days)
 
-- [ ] **TASK-021**: Create React Query hooks
-  ```typescript
-  // hooks/useContracts.ts
-  - useContracts()
-  - useContract(id)
-  - useCreateContract()
-  - useAnalyzeContract()
-  ```
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| AI-001 | Create Gemini client service | P0 | M | [ ] | BE-001 |
+| AI-002 | Migrate risk patterns from frontend | P0 | S | [ ] | AI-001 |
+| AI-003 | Create ContractAnalysis model | P0 | M | [ ] | BE-003 |
+| AI-004 | Create RiskItem embedded model | P0 | S | [ ] | AI-003 |
+| AI-005 | Create Pydantic schemas for Analysis | P0 | S | [ ] | AI-003 |
+| AI-006 | Create analysis prompt template | P0 | M | [ ] | AI-001 |
+| AI-007 | Create POST /analysis endpoint | P0 | M | [ ] | AI-001..006 |
+| AI-008 | Implement pattern detection | P0 | M | [ ] | AI-002 |
+| AI-009 | Combine AI + pattern results | P0 | M | [ ] | AI-007, AI-008 |
+| AI-010 | Create GET /analysis/{id} endpoint | P0 | S | [ ] | AI-003 |
+| AI-011 | Add async background task option | P2 | L | [ ] | AI-007 |
+| AI-012 | Write unit tests for analysis | P1 | M | [ ] | AI-007..010 |
 
-### 4.2 Auth Flow
-- [ ] **TASK-022**: Create auth context/store
-  - Login/logout functions
-  - Token storage (localStorage)
-  - Auto-refresh logic
+**Files to Create**:
+```
+backend/app/services/gemini.py
+backend/app/models/analysis.py
+backend/app/schemas/analysis.py
+backend/app/api/v1/analysis.py
+```
 
-- [ ] **TASK-023**: Create Login/Register views
-  - Email/password form
-  - Form validation
-  - Error display
+---
 
-- [ ] **TASK-024**: Add protected routes
-  - Redirect to login if not authenticated
-  - Show user info in header
+### Sprint 1.6: Frontend Integration (4 days)
 
-### 4.3 Data Persistence
-- [ ] **TASK-025**: Migrate App.tsx state to API
-  - Replace useState with useQuery
-  - Add mutation for contract updates
-  - Optimistic updates
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| FE-001 | Create API client service (axios) | P0 | M | [ ] | - |
+| FE-002 | Add auth interceptor for JWT | P0 | S | [ ] | FE-001 |
+| FE-003 | Add refresh token interceptor | P0 | M | [ ] | FE-002 |
+| FE-004 | Create AuthContext with state | P0 | M | [ ] | FE-001 |
+| FE-005 | Create Login view | P0 | M | [ ] | FE-004 |
+| FE-006 | Create Register view | P0 | M | [ ] | FE-004 |
+| FE-007 | Add auth routes to App.tsx | P0 | S | [ ] | FE-005, FE-006 |
+| FE-008 | Update Upload.tsx to use API | P0 | M | [ ] | FE-001 |
+| FE-009 | Update Report.tsx to fetch from API | P0 | M | [ ] | FE-001 |
+| FE-010 | Update Home.tsx to fetch contracts | P0 | M | [ ] | FE-001 |
+| FE-011 | Update ContractDetail.tsx for API | P0 | M | [ ] | FE-001 |
+| FE-012 | Add loading states throughout | P1 | M | [ ] | FE-008..011 |
+| FE-013 | Add error handling throughout | P1 | M | [ ] | FE-008..011 |
+| FE-014 | E2E testing of complete flow | P1 | L | [ ] | All above |
 
-## Sprint 5: Document Management (Week 5-6)
+**Files to Create**:
+```
+src/services/api.ts
+src/contexts/AuthContext.tsx
+src/views/Login.tsx
+src/views/Register.tsx
+```
 
-### 5.1 File Storage
-- [ ] **TASK-026**: Set up S3/Minio storage
-  - Configure bucket
-  - Presigned URL generation
-  - File type validation
+**Files to Modify**:
+```
+src/App.tsx
+src/views/Upload.tsx
+src/views/Report.tsx
+src/views/Home.tsx
+src/views/ContractDetail.tsx
+```
 
-- [ ] **TASK-027**: Implement secure file access
-  - Time-limited download URLs
-  - File encryption at rest
+---
 
-### 5.2 PDF Generation
-- [ ] **TASK-028**: Create PDF report generator
-  - Analysis report template
-  - Risk summary page
-  - Negotiation guide page
+## Phase 2: DID & Blockchain Integration
 
-- [ ] **TASK-029**: Certificate PDF generator
-  - Blockchain proof format
-  - QR code embedding
-  - Formal layout
+### Sprint 2.1: DID BaaS SDK Integration (4 days)
 
-## Sprint 6: Deployment (Week 6)
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| DID-001 | Obtain DID BaaS API key | P0 | XS | [ ] | - |
+| DID-002 | Create DidBaasClient Python class | P0 | M | [ ] | BE-001 |
+| DID-003 | Implement issue_did() method | P0 | M | [ ] | DID-002 |
+| DID-004 | Implement verify_did() method | P0 | S | [ ] | DID-002 |
+| DID-005 | Implement get_did_document() method | P1 | S | [ ] | DID-002 |
+| DID-006 | Implement issue_w3c_credential() method | P0 | M | [ ] | DID-002 |
+| DID-007 | Implement verify_credential() method | P0 | S | [ ] | DID-002 |
+| DID-008 | Add error handling for DID BaaS calls | P0 | S | [ ] | DID-002..007 |
+| DID-009 | Write integration tests | P1 | M | [ ] | DID-003..007 |
 
-### 6.1 Server Configuration
-- [ ] **TASK-030**: Set up Docker environment
-  - Dockerfile for frontend
-  - Dockerfile for backend
-  - docker-compose.yml
+**Files to Create**:
+```
+backend/app/services/did_baas.py
+backend/tests/test_did_baas.py
+```
 
-- [ ] **TASK-031**: Configure Nginx reverse proxy
-  - Frontend static serving
-  - Backend API proxy
-  - SSL/TLS setup
+---
 
-### 6.2 CI/CD Pipeline
-- [ ] **TASK-032**: Create GitHub Actions workflow
-  - Build and test on PR
-  - Deploy on merge to main
-  - Notify on failure
+### Sprint 2.2: DID Issuance for Users (4 days)
 
-- [ ] **TASK-033**: Server deployment script
-  - Pull latest code
-  - Rebuild containers
-  - Run migrations
-  - Health check
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| DID-010 | Add did_address field to User model | P0 | S | [ ] | AUTH-001 |
+| DID-011 | Add did_status enum (NONE, PENDING, CONFIRMED) | P0 | S | [ ] | AUTH-001 |
+| DID-012 | Create Alembic migration for DID fields | P0 | S | [ ] | DID-010, DID-011 |
+| DID-013 | Create POST /users/{id}/did endpoint | P0 | M | [ ] | DID-003 |
+| DID-014 | Create GET /users/{id}/did/status endpoint | P0 | S | [ ] | DID-004 |
+| DID-015 | Implement DID status polling logic | P1 | M | [ ] | DID-014 |
+| DID-016 | Update auth_level after DID confirmation | P0 | S | [ ] | DID-015 |
+| DID-017 | Add DID creation UI to Profile.tsx | P0 | M | [ ] | DID-013 |
+| DID-018 | Show DID status badge in profile | P1 | S | [ ] | DID-017 |
 
-## Priority Matrix
+**Files to Modify**:
+```
+backend/app/models/user.py
+backend/app/api/v1/users.py
+src/views/Profile.tsx
+```
 
-| Task | Priority | Effort | Dependencies |
-|------|----------|--------|--------------|
-| TASK-003 | P0 | M | None |
-| TASK-005 | P0 | L | TASK-003 |
-| TASK-006 | P0 | S | TASK-005 |
-| TASK-009 | P1 | M | None |
-| TASK-013 | P1 | L | None |
-| TASK-015 | P1 | M | TASK-013 |
-| TASK-019 | P1 | S | None |
-| TASK-025 | P1 | M | TASK-016, TASK-021 |
-| TASK-030 | P2 | M | All above |
+---
 
-**Legend**: P0=Critical, P1=Important, P2=Nice-to-have
-**Effort**: S=Small(1-2hr), M=Medium(4-8hr), L=Large(1-2 days)
+### Sprint 2.3: Electronic Signature with VC (5 days)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| SIGN-001 | Create ContractSignature model | P0 | M | [ ] | CTR-001 |
+| SIGN-002 | Create ContractSignature schema | P0 | S | [ ] | SIGN-001 |
+| SIGN-003 | Create SafeCon issuer DID (one-time) | P0 | M | [ ] | DID-003 |
+| SIGN-004 | Register contract-signature-v1 schema | P0 | M | [ ] | DID-002 |
+| SIGN-005 | Create document hash before signing | P0 | S | [ ] | DOC-006 |
+| SIGN-006 | Issue W3C VC for signature | P0 | L | [ ] | DID-006, SIGN-005 |
+| SIGN-007 | Store credential ID in database | P0 | S | [ ] | SIGN-006 |
+| SIGN-008 | Create POST /contracts/{id}/sign endpoint | P0 | M | [ ] | SIGN-006 |
+| SIGN-009 | Create GET /contracts/{id}/signatures endpoint | P0 | S | [ ] | SIGN-001 |
+| SIGN-010 | Create GET /signatures/{id}/verify endpoint | P0 | M | [ ] | DID-007 |
+| SIGN-011 | Update DocuSignSigning.tsx for real signing | P0 | L | [ ] | SIGN-008 |
+| SIGN-012 | Add signature verification UI | P1 | M | [ ] | SIGN-010 |
+
+**Files to Create**:
+```
+backend/app/models/signature.py
+backend/app/schemas/signature.py
+backend/app/api/v1/signatures.py
+```
+
+---
+
+### Sprint 2.4: Blockchain Record Storage (4 days)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| CHAIN-001 | Create BlockchainRecord model | P0 | M | [ ] | CTR-001 |
+| CHAIN-002 | Create BlockchainRecord schema | P0 | S | [ ] | CHAIN-001 |
+| CHAIN-003 | Extract tx_hash from VC response | P0 | S | [ ] | SIGN-006 |
+| CHAIN-004 | Store blockchain details in DB | P0 | S | [ ] | CHAIN-003 |
+| CHAIN-005 | Create POST /contracts/{id}/notarize endpoint | P0 | M | [ ] | CHAIN-004 |
+| CHAIN-006 | Create GET /contracts/{id}/blockchain endpoint | P0 | S | [ ] | CHAIN-001 |
+| CHAIN-007 | Create GET /verify/{hash} public endpoint | P0 | M | [ ] | CHAIN-001 |
+| CHAIN-008 | Display blockchain info in ContractDetail | P0 | M | [ ] | CHAIN-006 |
+| CHAIN-009 | Create public Verify.tsx page | P1 | M | [ ] | CHAIN-007 |
+
+**Files to Create**:
+```
+backend/app/models/blockchain.py
+backend/app/schemas/blockchain.py
+backend/app/api/v1/blockchain.py
+src/views/Verify.tsx
+```
+
+---
+
+### Sprint 2.5: Certificate Generation (4 days)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| CERT-001 | Design certificate PDF template (HTML) | P0 | M | [ ] | - |
+| CERT-002 | Create certificate number generator | P0 | S | [ ] | - |
+| CERT-003 | Create QR code generation utility | P0 | S | [ ] | - |
+| CERT-004 | Create Certificate model | P0 | S | [ ] | CHAIN-001 |
+| CERT-005 | Create PDF generation service | P0 | L | [ ] | CERT-001 |
+| CERT-006 | Create GET /contracts/{id}/certificate endpoint | P0 | M | [ ] | CERT-005 |
+| CERT-007 | Store certificate PDF in S3 | P0 | S | [ ] | DOC-001 |
+| CERT-008 | Add certificate download button in UI | P0 | S | [ ] | CERT-006 |
+
+**Files to Create**:
+```
+backend/app/services/certificate.py
+backend/app/utils/qrcode.py
+backend/templates/certificate.html
+```
+
+---
+
+## Phase 3: Advanced Features
+
+### Sprint 3.1: Merkle Tree Batching (5 days)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| MERK-001 | Create Merkle tree library/utility | P0 | M | [ ] | - |
+| MERK-002 | Create PendingAnchor model | P0 | S | [ ] | - |
+| MERK-003 | Create AnchorBatch model | P0 | S | [ ] | - |
+| MERK-004 | Queue documents for batching | P0 | M | [ ] | MERK-002 |
+| MERK-005 | Create batch processing job | P0 | L | [ ] | MERK-001 |
+| MERK-006 | Build Merkle tree from batch | P0 | M | [ ] | MERK-005 |
+| MERK-007 | Anchor root hash to Xphere | P0 | M | [ ] | DID-002 |
+| MERK-008 | Store Merkle proofs per document | P0 | M | [ ] | MERK-006 |
+| MERK-009 | Update verification with Merkle proof | P0 | M | [ ] | CHAIN-007 |
+| MERK-010 | Schedule batch job (APScheduler/Celery) | P1 | M | [ ] | MERK-005 |
+
+---
+
+### Sprint 3.2: Multi-party Signing (5 days)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| MULTI-001 | Enhance ContractParty model | P0 | M | [ ] | CTR-005 |
+| MULTI-002 | Add signing_order field | P0 | S | [ ] | MULTI-001 |
+| MULTI-003 | Add signature_status per party | P0 | S | [ ] | MULTI-001 |
+| MULTI-004 | Create email invitation service | P0 | L | [ ] | - |
+| MULTI-005 | Send signing invitation email | P0 | M | [ ] | MULTI-004 |
+| MULTI-006 | Create party signing token | P0 | M | [ ] | - |
+| MULTI-007 | Enforce signing order | P0 | M | [ ] | MULTI-002 |
+| MULTI-008 | Lock document after all signatures | P0 | S | [ ] | SIGN-008 |
+| MULTI-009 | Send completion notification | P1 | M | [ ] | MULTI-004 |
+| MULTI-010 | Add party management UI | P1 | L | [ ] | MULTI-001..009 |
+
+---
+
+### Sprint 3.3: Contract Version Control (4 days)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| VER-001 | Add version field to ContractDocument | P0 | S | [ ] | CTR-004 |
+| VER-002 | Auto-increment version on upload | P0 | S | [ ] | VER-001 |
+| VER-003 | Store all document versions | P0 | M | [ ] | VER-002 |
+| VER-004 | Create GET /documents/{id}/versions endpoint | P0 | M | [ ] | VER-003 |
+| VER-005 | Create diff comparison utility | P2 | L | [ ] | - |
+| VER-006 | Add version history UI | P1 | M | [ ] | VER-004 |
+
+---
+
+### Sprint 3.4: Sharing & Collaboration (4 days)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| SHARE-001 | Create ShareLink model | P0 | S | [ ] | CTR-001 |
+| SHARE-002 | Generate shareable link tokens | P0 | M | [ ] | SHARE-001 |
+| SHARE-003 | Add password protection option | P1 | M | [ ] | SHARE-002 |
+| SHARE-004 | Add expiration date option | P1 | S | [ ] | SHARE-001 |
+| SHARE-005 | Create GET /share/{token} endpoint | P0 | M | [ ] | SHARE-002 |
+| SHARE-006 | Track link access logs | P2 | M | [ ] | SHARE-005 |
+| SHARE-007 | Add sharing UI to ContractDetail | P0 | M | [ ] | SHARE-002 |
+
+---
+
+## Phase 4: Monetization
+
+### Sprint 4.1: Subscription System (5 days)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| PAY-001 | Integrate payment provider (Toss/Stripe) | P0 | XL | [ ] | - |
+| PAY-002 | Create Subscription model | P0 | M | [ ] | AUTH-001 |
+| PAY-003 | Create subscription tier logic | P0 | M | [ ] | PAY-002 |
+| PAY-004 | Implement usage tracking | P0 | M | [ ] | PAY-003 |
+| PAY-005 | Create subscription endpoints | P0 | L | [ ] | PAY-001..004 |
+| PAY-006 | Create upgrade/downgrade flow | P0 | L | [ ] | PAY-005 |
+| PAY-007 | Add billing dashboard | P1 | L | [ ] | PAY-005 |
+
+---
+
+### Sprint 4.2: B2B API (5 days)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| B2B-001 | Create ApiKey model | P0 | S | [ ] | AUTH-001 |
+| B2B-002 | Create API key management endpoints | P0 | M | [ ] | B2B-001 |
+| B2B-003 | Implement per-key rate limiting | P0 | M | [ ] | B2B-001 |
+| B2B-004 | Create usage tracking per key | P0 | M | [ ] | B2B-001 |
+| B2B-005 | Generate OpenAPI documentation | P0 | M | [ ] | All API endpoints |
+| B2B-006 | Create developer portal UI | P2 | L | [ ] | B2B-002 |
+| B2B-007 | Add webhook notifications | P2 | L | [ ] | - |
+
+---
+
+## Task Summary
+
+### By Phase
+
+| Phase | Total Tasks | P0 | P1 | P2 | P3 |
+|-------|-------------|----|----|----|----|
+| Phase 1 | 56 | 35 | 18 | 3 | 0 |
+| Phase 2 | 44 | 33 | 8 | 3 | 0 |
+| Phase 3 | 33 | 19 | 9 | 5 | 0 |
+| Phase 4 | 14 | 10 | 2 | 2 | 0 |
+| **Total** | **147** | **97** | **37** | **13** | **0** |
+
+### Recommended Execution Order
+
+1. **Week 1-2**: BE-001..009, AUTH-001..014
+2. **Week 3**: CTR-001..015
+3. **Week 4**: DOC-001..014
+4. **Week 5**: AI-001..012
+5. **Week 6**: FE-001..014
+6. **Week 7-8**: DID-001..018
+7. **Week 9-10**: SIGN-001..012, CHAIN-001..009
+8. **Week 11**: CERT-001..008
+9. **Week 12+**: Phase 3 & 4
+
+---
+
+## Dependencies Graph
+
+```
+BE-001 ─┬─► BE-002 ─► AUTH-* ─► FE-004..007
+        ├─► BE-003 ─► CTR-* ─► DOC-* ─► AI-*
+        └─► BE-006 ─► BE-005 ─► AUTH-012
+
+DID-002 ─┬─► DID-003..009 ─► DID-010..018
+         └─► SIGN-006 ─► CHAIN-003..009 ─► CERT-*
+
+SIGN-001..012 ─► MULTI-*
+CTR-004 ─► VER-*
+CTR-001 ─► SHARE-*
+```
