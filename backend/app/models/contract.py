@@ -67,6 +67,7 @@ class Contract(Base):
     parties = relationship("ContractParty", back_populates="contract", cascade="all, delete-orphan")
     analyses = relationship("AIAnalysis", back_populates="contract", cascade="all, delete-orphan")
     blockchain_records = relationship("BlockchainRecord", back_populates="contract", cascade="all, delete-orphan")
+    timeline_events = relationship("TimelineEvent", back_populates="contract", cascade="all, delete-orphan", order_by="TimelineEvent.event_date")
 
 
 class ContractDocument(Base):
@@ -126,3 +127,46 @@ class ContractParty(Base):
 
     # Relationship
     contract = relationship("Contract", back_populates="parties")
+
+
+class TimelineEventType(str, enum.Enum):
+    CREATED = "created"
+    UPLOADED = "uploaded"
+    ANALYZED = "analyzed"
+    SIGNED = "signed"
+    SENT = "sent"
+    RECEIVED = "received"
+    COMPLETED = "completed"
+    EXPIRED = "expired"
+    CANCELLED = "cancelled"
+    COMMENT = "comment"
+    CUSTOM = "custom"
+
+
+class TimelineEvent(Base):
+    __tablename__ = "timeline_events"
+    __table_args__ = (
+        Index('ix_timeline_events_contract_id', 'contract_id'),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    contract_id = Column(UUID(as_uuid=True), ForeignKey("contracts.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+
+    event_type = Column(Enum(TimelineEventType), default=TimelineEventType.CUSTOM)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    completed = Column(Boolean, default=False)
+
+    # Event date (when the event occurred/is scheduled)
+    event_date = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # Associated documents
+    document_ids = Column(Text, nullable=True)  # JSON array of document IDs
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship
+    contract = relationship("Contract", back_populates="timeline_events")

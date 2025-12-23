@@ -96,7 +96,7 @@ describe('OfflineIndicator', () => {
 
   it('hides reconnected message after timeout', async () => {
     // Use fake timers for this test
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
 
     try {
       // Start offline
@@ -114,10 +114,16 @@ describe('OfflineIndicator', () => {
       // The reconnected message should be visible
       expect(screen.getByText('Back online')).toBeInTheDocument();
 
-      // Advance time by 3 seconds (the timeout duration) and run all pending timers
+      // Advance time by 3 seconds (the timeout duration)
       await act(async () => {
         vi.advanceTimersByTime(3100);
+      });
+
+      // Run any remaining timers and wait for state updates
+      await act(async () => {
         await vi.runAllTimersAsync();
+        // Allow React to flush updates
+        await new Promise(resolve => setTimeout(resolve, 0));
       });
 
       // The reconnected message should now be hidden

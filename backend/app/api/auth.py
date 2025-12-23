@@ -28,6 +28,8 @@ from app.core.exceptions import (
     UserNotFoundError,
     UserAlreadyExistsError
 )
+from app.services.redis import redis_service
+from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 security = HTTPBearer()
@@ -39,6 +41,11 @@ async def get_current_user(
 ) -> User:
     """Get current authenticated user from JWT token."""
     token = credentials.credentials
+
+    # Check if token is blacklisted
+    if await redis_service.is_token_blacklisted(token):
+        raise TokenInvalidError("Token has been revoked")
+
     token_data = verify_token(token, "access")
 
     if token_data is None:
@@ -156,6 +163,20 @@ async def refresh_token(
         refresh_token=refresh_token,
         user=UserResponse.model_validate(user)
     )
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Logout and invalidate access token."""
+    token = credentials.credentials
+
+    # Add token to blacklist (expires when token would expire)
+    expires_in = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    await redis_service.blacklist_token(token, expires_in)
+
+    return None
 
 
 @router.get("/me", response_model=UserResponse)

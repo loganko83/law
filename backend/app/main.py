@@ -6,6 +6,7 @@ from app.core.config import settings
 from app.core.error_handlers import register_exception_handlers
 from app.core.logging import setup_logging, get_logger, RequestLoggingMiddleware
 from app.db.base import init_db, close_db
+from app.services.redis import redis_service
 from app.api import auth, contracts, analysis, did, signatures, blockchain, parties, versions, sharing, templates, subscriptions, b2b, documents
 
 # Initialize structured logging
@@ -25,11 +26,20 @@ async def lifespan(app: FastAPI):
     )
     await init_db()
     logger.info("database_connected")
+
+    # Initialize Redis (optional - graceful degradation if unavailable)
+    try:
+        await redis_service.connect()
+        logger.info("redis_connected")
+    except Exception as e:
+        logger.warning("redis_connection_failed", error=str(e), message="Running without Redis")
+
     yield
     # Shutdown
     logger.info("application_shutdown")
+    await redis_service.disconnect()
     await close_db()
-    logger.info("database_disconnected")
+    logger.info("services_disconnected")
 
 
 # Create FastAPI app

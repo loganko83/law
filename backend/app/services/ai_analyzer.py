@@ -1,19 +1,34 @@
 import json
-from typing import Optional
+from typing import Optional, List
 from google import genai
 from app.core.config import settings
+from app.services.risk_patterns import (
+    detect_pattern_risks,
+    calculate_pattern_score,
+    merge_risks,
+    DetectedRisk,
+    RiskLevel
+)
 
 
 async def analyze_contract_text(
     contract_text: str,
-    user_context: Optional[str] = None
+    user_context: Optional[str] = None,
+    lang: str = "ko"
 ) -> dict:
     """
-    Analyze contract text using Gemini AI.
+    Analyze contract text using pattern matching and Gemini AI.
+
+    Combines rule-based pattern detection with AI analysis for
+    comprehensive contract risk assessment.
 
     Returns:
         dict with keys: score, summary, risks, questions, model
     """
+    # Step 1: Pattern-based pre-analysis
+    pattern_risks = detect_pattern_risks(contract_text, lang)
+    pattern_score = calculate_pattern_score(pattern_risks)
+
     # Initialize Gemini client
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
@@ -104,26 +119,81 @@ Return ONLY the JSON object, no additional text.
         result.setdefault("summary", "Analysis completed.")
         result.setdefault("risks", [])
         result.setdefault("questions", [])
+
+        # Step 2: Convert AI risks to DetectedRisk format
+        ai_risks: List[DetectedRisk] = []
+        for idx, risk in enumerate(result.get("risks", [])):
+            level = RiskLevel.HIGH if risk.get("level") == "HIGH" else (
+                RiskLevel.MEDIUM if risk.get("level") == "MEDIUM" else RiskLevel.LOW
+            )
+            ai_risks.append(DetectedRisk(
+                id=risk.get("id", f"ai_{idx}"),
+                title=risk.get("title", "Unknown Risk"),
+                description=risk.get("description", ""),
+                level=level
+            ))
+
+        # Step 3: Merge pattern and AI risks
+        all_risks = merge_risks(pattern_risks, ai_risks)
+
+        # Step 4: Calculate combined score (weighted average)
+        ai_score = result.get("score", 50)
+        combined_score = int((pattern_score * 0.3) + (ai_score * 0.7))
+
+        # Convert back to dict format for response
+        result["risks"] = [
+            {
+                "id": r.id,
+                "title": r.title,
+                "description": r.description,
+                "level": r.level.value,
+                "matched_text": r.matched_text
+            }
+            for r in all_risks
+        ]
+        result["score"] = combined_score
         result["model"] = "gemini-2.0-flash-exp"
+        result["pattern_risks_count"] = len(pattern_risks)
 
         return result
 
     except json.JSONDecodeError as e:
-        # Return fallback response if JSON parsing fails
+        # Return fallback response with pattern risks if JSON parsing fails
         return {
-            "score": 50,
-            "summary": "Unable to fully parse the contract. Please review manually.",
-            "risks": [],
+            "score": pattern_score,
+            "summary": "AI analysis incomplete. Pattern-based risks detected.",
+            "risks": [
+                {
+                    "id": r.id,
+                    "title": r.title,
+                    "description": r.description,
+                    "level": r.level.value,
+                    "matched_text": r.matched_text
+                }
+                for r in pattern_risks
+            ],
             "questions": ["Could you provide more details about the contract terms?"],
             "model": "gemini-2.0-flash-exp",
+            "pattern_risks_count": len(pattern_risks),
             "error": f"JSON parsing error: {str(e)}"
         }
     except Exception as e:
+        # Return pattern risks even if AI fails
         return {
-            "score": 0,
-            "summary": f"Analysis failed: {str(e)}",
-            "risks": [],
+            "score": pattern_score if pattern_risks else 0,
+            "summary": f"AI analysis failed: {str(e)}. Pattern-based analysis provided.",
+            "risks": [
+                {
+                    "id": r.id,
+                    "title": r.title,
+                    "description": r.description,
+                    "level": r.level.value,
+                    "matched_text": r.matched_text
+                }
+                for r in pattern_risks
+            ],
             "questions": [],
             "model": "gemini-2.0-flash-exp",
+            "pattern_risks_count": len(pattern_risks),
             "error": str(e)
         }

@@ -99,8 +99,8 @@ describe('conversationStorage', () => {
   describe('createNew', () => {
     it('creates conversation with unique id', async () => {
       const conv1 = conversationStorage.createNew();
-      // Wait a ms to ensure different timestamp
-      await new Promise(resolve => setTimeout(resolve, 1));
+      // Wait a few ms to ensure different timestamp
+      await new Promise(resolve => setTimeout(resolve, 5));
       const conv2 = conversationStorage.createNew();
 
       expect(conv1.id).toBeTruthy();

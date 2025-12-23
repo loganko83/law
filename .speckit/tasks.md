@@ -152,7 +152,7 @@ nginx.conf
 | BE-002 | Create config.py with environment loading | P0 | S | [x] | BE-001 |
 | BE-003 | Set up SQLAlchemy with async support | P0 | M | [x] | BE-001 |
 | BE-004 | Configure Alembic migrations | P0 | M | [x] | BE-003 |
-| BE-005 | Create Redis connection service | P1 | S | [ ] | BE-001 |
+| BE-005 | Create Redis connection service | P1 | S | [x] | BE-001 |
 | BE-006 | Set up Docker Compose (postgres, redis) | P0 | M | [x] | - |
 | BE-007 | Configure logging (structlog) | P1 | S | [x] | BE-001 |
 | BE-008 | Create requirements.txt | P0 | XS | [x] | BE-001 |
@@ -188,7 +188,7 @@ backend/
 | AUTH-008 | Create POST /auth/register endpoint | P0 | M | [x] | AUTH-003, AUTH-004 |
 | AUTH-009 | Create POST /auth/login endpoint | P0 | M | [x] | AUTH-006 |
 | AUTH-010 | Create POST /auth/refresh endpoint | P0 | M | [x] | AUTH-007 |
-| AUTH-011 | Create POST /auth/logout endpoint | P1 | S | [ ] | AUTH-006 |
+| AUTH-011 | Create POST /auth/logout endpoint | P1 | S | [x] | AUTH-006 |
 | AUTH-012 | Add rate limiting middleware (Redis) | P1 | M | [ ] | BE-005 |
 | AUTH-013 | Create auth dependency (get_current_user) | P0 | S | [x] | AUTH-006 |
 | AUTH-014 | Write unit tests for auth | P1 | L | [x] | AUTH-008..011 |
@@ -214,7 +214,7 @@ backend/app/utils/security.py
 | CTR-003 | Create ContractStatus enum | P0 | XS | [x] | - |
 | CTR-004 | Create ContractDocument model | P0 | M | [x] | CTR-001 |
 | CTR-005 | Create ContractParty model | P1 | S | [x] | CTR-001 |
-| CTR-006 | Create TimelineEvent model | P1 | S | [ ] | CTR-001 |
+| CTR-006 | Create TimelineEvent model | P1 | S | [x] | CTR-001 |
 | CTR-007 | Create Pydantic schemas for Contract | P0 | M | [x] | CTR-001..006 |
 | CTR-008 | Create POST /contracts endpoint | P0 | M | [x] | CTR-007 |
 | CTR-009 | Create GET /contracts endpoint (list) | P0 | M | [x] | CTR-007 |
@@ -269,14 +269,14 @@ backend/app/utils/hash.py
 | ID | Task | Priority | Effort | Status | Dependencies |
 |----|------|----------|--------|--------|--------------|
 | AI-001 | Create Gemini client service | P0 | M | [x] | BE-001 |
-| AI-002 | Migrate risk patterns from frontend | P0 | S | [ ] | AI-001 |
+| AI-002 | Migrate risk patterns from frontend | P0 | S | [x] | AI-001 |
 | AI-003 | Create ContractAnalysis model | P0 | M | [x] | BE-003 |
 | AI-004 | Create RiskItem embedded model | P0 | S | [x] | AI-003 |
 | AI-005 | Create Pydantic schemas for Analysis | P0 | S | [x] | AI-003 |
 | AI-006 | Create analysis prompt template | P0 | M | [x] | AI-001 |
 | AI-007 | Create POST /analysis endpoint | P0 | M | [x] | AI-001..006 |
-| AI-008 | Implement pattern detection | P0 | M | [ ] | AI-002 |
-| AI-009 | Combine AI + pattern results | P0 | M | [ ] | AI-007, AI-008 |
+| AI-008 | Implement pattern detection | P0 | M | [x] | AI-002 |
+| AI-009 | Combine AI + pattern results | P0 | M | [x] | AI-007, AI-008 |
 | AI-010 | Create GET /analysis/{id} endpoint | P0 | S | [x] | AI-003 |
 | AI-011 | Add async background task option | P2 | L | [x] | AI-007 |
 | AI-012 | Write unit tests for analysis | P1 | M | [ ] | AI-007..010 |
