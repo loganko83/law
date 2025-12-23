@@ -45,9 +45,9 @@ services/geminiClient.ts (remove or proxy)
 | ID | Task | Priority | Effort | Status | Dependencies |
 |----|------|----------|--------|--------|--------------|
 | BUG-001 | Fix AuthContext infinite loop (refreshUser dependency) | P0 | S | [x] | - |
-| BUG-002 | Fix memory leak in OfflineIndicator (setTimeout cleanup) | P1 | XS | [ ] | - |
-| BUG-003 | Fix Report.tsx interval cleanup on score change | P1 | XS | [ ] | - |
-| BUG-004 | Add error handling to Upload.tsx fetch operations | P1 | S | [ ] | - |
+| BUG-002 | Fix memory leak in OfflineIndicator (setTimeout cleanup) | P1 | XS | [x] | - |
+| BUG-003 | Fix Report.tsx interval cleanup on score change | P1 | XS | [x] | - |
+| BUG-004 | Add error handling to Upload.tsx fetch operations | P1 | S | [x] | - |
 | BUG-005 | Fix pagination count query (use func.count) | P1 | S | [ ] | - |
 
 **Files to Modify**:
@@ -69,7 +69,7 @@ backend/app/api/contracts.py
 | DEP-002 | Add pre-deployment test step in CI/CD | P1 | S | [x] | - |
 | DEP-003 | Add health check validation after deployment | P1 | S | [x] | - |
 | DEP-004 | Fix VITE_API_URL for production environment | P0 | S | [x] | - |
-| DEP-005 | Add non-root user to Docker containers | P1 | S | [ ] | - |
+| DEP-005 | Add non-root user to Docker containers | P1 | S | [x] | - |
 
 **Files to Modify**:
 ```
@@ -89,8 +89,8 @@ Dockerfile
 | I18N-002 | Convert constants.ts templates to i18n | P1 | L | [ ] | I18N-001 |
 | TYPE-001 | Replace `any` types with proper interfaces | P1 | S | [ ] | - |
 | TYPE-002 | Add missing type hints in Python backend | P2 | M | [ ] | - |
-| PERF-001 | Add useMemo to Home.tsx filteredTemplates | P2 | XS | [ ] | - |
-| PERF-002 | Extract and memoize NavButton component | P2 | S | [ ] | - |
+| PERF-001 | Add useMemo to Home.tsx filteredTemplates | P2 | XS | [x] | - |
+| PERF-002 | Extract and memoize NavButton component | P2 | S | [x] | - |
 | PERF-003 | Add DB indexes for user_id and created_at | P1 | S | [ ] | - |
 | A11Y-001 | Add ARIA labels to buttons and interactive elements | P2 | M | [ ] | - |
 | DUP-001 | Extract PDF export to shared utility | P2 | M | [ ] | - |

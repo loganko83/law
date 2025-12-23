@@ -105,18 +105,21 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
       }
   };
 
-  const confirmPhoto = () => {
+  const confirmPhoto = async () => {
     if (capturedImage) {
-      // Convert DataURL to File
-      fetch(capturedImage)
-        .then(res => res.blob())
-        .then(blob => {
-          const file = new File([blob], "scanned-contract.jpg", { type: "image/jpeg" });
-          setFile(file);
-          setCapturedImage(null);
-          setCameraStream(null);
-          setIsCameraOpen(false);
-        });
+      try {
+        // Convert DataURL to File
+        const res = await fetch(capturedImage);
+        const blob = await res.blob();
+        const file = new File([blob], "scanned-contract.jpg", { type: "image/jpeg" });
+        setFile(file);
+        setCapturedImage(null);
+        setCameraStream(null);
+        setIsCameraOpen(false);
+      } catch (err) {
+        console.error("Error converting captured image:", err);
+        toast.error(t('upload.imageConversionError', 'Failed to process the captured image. Please try again.'));
+      }
     }
   };
 

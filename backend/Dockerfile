@@ -18,8 +18,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application
 COPY . .
 
-# Create uploads directory
-RUN mkdir -p /app/uploads
+# Create non-root user for security
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
+
+# Create uploads directory with proper permissions
+RUN mkdir -p /app/uploads && chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
 
 # Expose port
 EXPOSE 8000

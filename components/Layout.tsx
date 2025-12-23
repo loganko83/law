@@ -61,14 +61,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeV
   );
 };
 
-const NavButton: React.FC<{
+const NavButton = React.memo<{
   icon: React.ReactNode;
   label: string;
   active: boolean;
   primary?: boolean;
   onClick: () => void;
   testId?: string;
-}> = ({ icon, label, active, primary, onClick, testId }) => {
+}>(({ icon, label, active, primary, onClick, testId }) => {
   if (primary) {
     return (
       <button
@@ -95,4 +95,6 @@ const NavButton: React.FC<{
       <span className="text-[10px] font-medium">{label}</span>
     </button>
   );
-};
+});
+
+NavButton.displayName = 'NavButton';

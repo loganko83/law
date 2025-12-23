@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { WifiOff, Wifi } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isOnline, onOnlineStatusChange } from '../services/registerSW';
@@ -6,13 +6,27 @@ import { isOnline, onOnlineStatusChange } from '../services/registerSW';
 export const OfflineIndicator: React.FC = () => {
   const [online, setOnline] = useState(isOnline());
   const [showReconnected, setShowReconnected] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onOnlineStatusChange((status) => {
       if (status && !online) {
         // Just came back online
         setShowReconnected(true);
-        setTimeout(() => setShowReconnected(false), 3000);
+        // Clear any existing timeout before setting a new one
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        timeoutRef.current = setTimeout(() => setShowReconnected(false), 3000);
       }
       setOnline(status);
     });

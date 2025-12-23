@@ -78,20 +78,27 @@ export const Report: React.FC<ReportProps> = ({ analysis, onDone }) => {
   };
 
   useEffect(() => {
+    // Reset display score when analysis.score changes
+    setDisplayScore(0);
+
+    // Handle 0 score case
+    if (analysis.score === 0) {
+      return;
+    }
+
     // Simple count-up animation
     let start = 0;
     const end = analysis.score;
     const duration = 1000;
-    const incrementTime = duration / end; 
-
-    // Handle 0 score case or very fast animation
-    if (end === 0) return;
+    const incrementTime = Math.max(duration / end, 10); // Min 10ms per step
 
     const timer = setInterval(() => {
       start += 1;
       setDisplayScore(start);
-      if (start === end) clearInterval(timer);
-    }, Math.max(incrementTime, 10)); // Min 10ms per step
+      if (start >= end) {
+        clearInterval(timer);
+      }
+    }, incrementTime);
 
     return () => clearInterval(timer);
   }, [analysis.score]);

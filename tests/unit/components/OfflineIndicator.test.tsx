@@ -95,29 +95,37 @@ describe('OfflineIndicator', () => {
   });
 
   it('hides reconnected message after timeout', async () => {
-    // Start offline
-    mockIsOnline.mockReturnValue(false);
+    // Use fake timers for this test
+    vi.useFakeTimers();
 
-    render(<OfflineIndicator />);
+    try {
+      // Start offline
+      mockIsOnline.mockReturnValue(false);
 
-    // Simulate coming back online
-    act(() => {
-      if (onlineStatusCallback) {
-        onlineStatusCallback(true);
-      }
-    });
+      render(<OfflineIndicator />);
 
-    await waitFor(() => {
+      // Simulate coming back online
+      act(() => {
+        if (onlineStatusCallback) {
+          onlineStatusCallback(true);
+        }
+      });
+
+      // The reconnected message should be visible
       expect(screen.getByText('Back online')).toBeInTheDocument();
-    });
 
-    // Wait for the reconnected message to disappear (3 seconds + buffer)
-    await waitFor(
-      () => {
-        expect(screen.queryByText('Back online')).not.toBeInTheDocument();
-      },
-      { timeout: 4000 }
-    );
+      // Advance time by 3 seconds (the timeout duration) and run all pending timers
+      await act(async () => {
+        vi.advanceTimersByTime(3100);
+        await vi.runAllTimersAsync();
+      });
+
+      // The reconnected message should now be hidden
+      expect(screen.queryByText('Back online')).not.toBeInTheDocument();
+    } finally {
+      // Restore real timers
+      vi.useRealTimers();
+    }
   });
 
   it('subscribes to online status changes on mount', () => {

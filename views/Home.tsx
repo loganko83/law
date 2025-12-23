@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -33,8 +33,9 @@ export const Home: React.FC<HomeProps> = ({ contracts, onContractClick, onNewChe
     'Investment': 'investment'
   };
 
-  const filteredContracts = activeContracts.filter(c =>
-    filterType === 'all' || filterKeyMap[c.type] === filterType
+  const filteredContracts = useMemo(() =>
+    activeContracts.filter(c => filterType === 'all' || filterKeyMap[c.type] === filterType),
+    [activeContracts, filterType]
   );
 
   const filters = ['all', 'freelance', 'rental', 'employment', 'service', 'business', 'investment'];
@@ -60,7 +61,10 @@ export const Home: React.FC<HomeProps> = ({ contracts, onContractClick, onNewChe
     'realEstate': t('filters.realEstate'),
     'employment': t('filters.employment')
   };
-  const filteredTemplates = templates.filter(tpl => templateCategory === 'all' || tpl.category === templateCategory);
+  const filteredTemplates = useMemo(() =>
+    templates.filter(tpl => templateCategory === 'all' || tpl.category === templateCategory),
+    [templateCategory]
+  );
 
   const notifications = [
       { id: 1, text: t('notifications.paymentReminder'), time: '2h', read: false },
