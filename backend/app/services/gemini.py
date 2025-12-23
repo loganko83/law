@@ -238,7 +238,7 @@ class GeminiClient:
             client = self._get_client()
 
             response = client.models.generate_content(
-                model="gemini-1.5-flash",
+                model="gemini-2.0-flash",
                 contents=user_prompt,
                 config={
                     "system_instruction": ANALYSIS_SYSTEM_PROMPT,
@@ -269,7 +269,7 @@ class GeminiClient:
                 summary=result_dict.get("summary", "Analysis completed."),
                 risks=risks,
                 questions=result_dict.get("questions", []),
-                model="gemini-1.5-flash",
+                model="gemini-2.0-flash",
                 raw_response=response.text
             )
 
@@ -280,7 +280,7 @@ class GeminiClient:
                 summary="분석 결과 파싱에 실패했습니다. 수동 검토가 필요합니다.",
                 risks=[],
                 questions=["계약서 내용을 직접 확인해주세요."],
-                model="gemini-1.5-flash",
+                model="gemini-2.0-flash",
                 error=f"JSON parsing error: {str(e)}"
             )
         except Exception as e:
