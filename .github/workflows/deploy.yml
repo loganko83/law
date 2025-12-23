@@ -6,7 +6,29 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
   build-and-deploy:
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
@@ -25,11 +47,18 @@ jobs:
       - name: Build application
         run: npm run build
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          VITE_API_URL: https://trendy.storydot.kr/law/api
 
       - name: Create deployment package
         run: |
-          tar -czf deploy.tar.gz dist/ docker-compose.yml Dockerfile nginx.conf
+          tar -czf deploy.tar.gz \
+            dist/ \
+            backend/ \
+            docker-compose.yml \
+            Dockerfile \
+            nginx.conf \
+            package.json \
+            package-lock.json
 
       - name: Deploy to server
         uses: appleboy/scp-action@v0.1.7
@@ -48,9 +77,36 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /mnt/storage/law
+
+            # Extract new files
             tar -xzf deploy.tar.gz
-            docker-compose down 2>/dev/null || true
-            docker-compose up -d --build
             rm deploy.tar.gz
-            echo "Deployment complete!"
-            docker ps | grep safecon || echo "Container may need a moment to start"
+
+            # Zero-downtime deployment: rebuild and restart without down
+            docker compose up -d --build --remove-orphans
+
+            # Wait for services to be healthy
+            echo "Waiting for services to start..."
+            sleep 10
+
+            # Validate deployment
+            echo "Validating deployment..."
+
+            # Check frontend
+            if curl -sf http://localhost:3000/ > /dev/null; then
+              echo "Frontend: OK"
+            else
+              echo "Frontend: FAILED"
+              exit 1
+            fi
+
+            # Check backend health
+            if curl -sf http://localhost:8000/health > /dev/null; then
+              echo "Backend: OK"
+            else
+              echo "Backend: FAILED"
+              exit 1
+            fi
+
+            echo "Deployment complete and validated!"
+            docker ps --format "table {{.Names}}\t{{.Status}}" | grep safecon

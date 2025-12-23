@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Layout } from './components/Layout';
 import { Home } from './views/Home';
 import { Upload } from './views/Upload';
@@ -23,6 +24,7 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 
 // Inner App component that uses auth context
 const AppContent: React.FC = () => {
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [currentView, setCurrentView] = useState<ViewState>('HOME');
   const [contracts, setContracts] = useState<Contract[]>(MOCK_CONTRACTS);
@@ -32,12 +34,12 @@ const AppContent: React.FC = () => {
 
   // RAG: Centralized User Context - sync with auth user when available
   const [userProfile, setUserProfile] = useState<UserProfile>({
-    name: '홍길동',
-    email: 'hong@example.com',
-    phone: '010-1234-5678',
-    businessType: '프리랜서 개발자',
-    businessDescription: '스타트업을 대상으로 웹 프론트엔드 및 백엔드 개발 용역을 제공합니다.',
-    legalConcerns: '대금 미지급 문제와 과도한 유지보수 요구 방어'
+    name: t('defaults.userName'),
+    email: t('defaults.userEmail'),
+    phone: t('defaults.userPhone'),
+    businessType: t('defaults.businessType'),
+    businessDescription: t('defaults.businessDescription'),
+    legalConcerns: t('defaults.legalConcerns')
   });
 
   // Sync user profile with authenticated user data
@@ -119,9 +121,9 @@ const AppContent: React.FC = () => {
               status: ContractStatus.Active,
               timeline: [
                   ...(selectedContract.timeline || []),
-                  { 
-                      date: new Date().toISOString().split('T')[0], 
-                      title: '전자서명 완료 (DocuSign)', 
+                  {
+                      date: new Date().toISOString().split('T')[0],
+                      title: t('timeline.signatureComplete'),
                       completed: true,
                       notes: 'DocuSign ID: ' + Math.random().toString(36).substr(2, 8).toUpperCase(),
                       documents: ['signed_contract.pdf']

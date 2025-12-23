@@ -4,27 +4,34 @@ services:
     image: postgres:16-alpine
     container_name: safecon-db
     environment:
-      POSTGRES_USER: safecon
-      POSTGRES_PASSWORD: safecon
-      POSTGRES_DB: safecon
-    ports:
-      - "5434:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-safecon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Database password required}
+      POSTGRES_DB: ${POSTGRES_DB:-safecon}
+    # Ports exposed only for development - remove in production
+    # ports:
+    #   - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U safecon"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-safecon}"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
       - safecon-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
 
   # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: safecon-redis
-    ports:
-      - "6381:6379"
+    # Ports exposed only for development - remove in production
+    # ports:
+    #   - "6381:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -34,6 +41,11 @@ services:
       retries: 5
     networks:
       - safecon-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
   # FastAPI Backend
   backend:
@@ -44,11 +56,11 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql+asyncpg://safecon:safecon@postgres:5432/safecon
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-safecon}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-safecon}
       - REDIS_URL=redis://redis:6379/0
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-this-in-production}
-      - DEBUG=true
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT secret key required}
+      - DEBUG=${DEBUG:-false}
       - DID_BAAS_URL=https://trendy.storydot.kr/did-baas/api/v1
       - DID_BAAS_API_KEY=${DID_BAAS_API_KEY}
     ports:
@@ -64,23 +76,39 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - safecon-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
 
   # React Frontend
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-https://trendy.storydot.kr/law/api}
     container_name: safecon-frontend
     ports:
       - "3000:80"
     environment:
       - NODE_ENV=production
-      - VITE_API_URL=http://localhost:8000
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
     depends_on:
       - backend
     networks:
       - safecon-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
 networks:
   safecon-network:

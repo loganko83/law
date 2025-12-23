@@ -1,4 +1,4 @@
-# SafeCon Task Breakdown v2.0
+# SafeCon Task Breakdown v2.1
 
 ## Overview
 
@@ -14,6 +14,131 @@ Each task includes priority, effort estimate, and dependencies.
 **Priority**: P0=Critical, P1=High, P2=Medium, P3=Low
 
 **Effort**: XS=<1hr, S=1-2hr, M=4-8hr, L=1-2days, XL=3-5days
+
+---
+
+## Phase 0: System Hardening (NEW - 2024-12-23)
+
+### Sprint 0.1: Critical Security Fixes (1 day)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| SEC-001 | Move Gemini API calls to backend proxy | P0 | M | [x] | - |
+| SEC-002 | Remove hardcoded DB credentials from docker-compose | P0 | S | [x] | - |
+| SEC-003 | Add JWT secret validation on startup | P0 | S | [x] | - |
+| SEC-004 | Disable DEBUG mode in production | P0 | XS | [x] | - |
+| SEC-005 | Add file upload MIME type validation | P0 | S | [ ] | DOC-003 |
+| SEC-006 | Remove exposed database ports in production | P1 | XS | [x] | - |
+
+**Files to Modify**:
+```
+docker-compose.yml
+backend/app/core/config.py
+backend/app/api/documents.py
+services/geminiClient.ts (remove or proxy)
+```
+
+---
+
+### Sprint 0.2: Bug Fixes (1 day)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| BUG-001 | Fix AuthContext infinite loop (refreshUser dependency) | P0 | S | [x] | - |
+| BUG-002 | Fix memory leak in OfflineIndicator (setTimeout cleanup) | P1 | XS | [ ] | - |
+| BUG-003 | Fix Report.tsx interval cleanup on score change | P1 | XS | [ ] | - |
+| BUG-004 | Add error handling to Upload.tsx fetch operations | P1 | S | [ ] | - |
+| BUG-005 | Fix pagination count query (use func.count) | P1 | S | [ ] | - |
+
+**Files to Modify**:
+```
+contexts/AuthContext.tsx
+components/OfflineIndicator.tsx
+views/Report.tsx
+views/Upload.tsx
+backend/app/api/contracts.py
+```
+
+---
+
+### Sprint 0.3: Deployment Fixes (1 day)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| DEP-001 | Include backend/ directory in deploy script | P0 | S | [x] | - |
+| DEP-002 | Add pre-deployment test step in CI/CD | P1 | S | [x] | - |
+| DEP-003 | Add health check validation after deployment | P1 | S | [x] | - |
+| DEP-004 | Fix VITE_API_URL for production environment | P0 | S | [x] | - |
+| DEP-005 | Add non-root user to Docker containers | P1 | S | [ ] | - |
+
+**Files to Modify**:
+```
+.github/workflows/deploy.yml
+docker-compose.yml
+backend/Dockerfile
+Dockerfile
+```
+
+---
+
+### Sprint 0.4: Code Quality (2 days)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| I18N-001 | Convert App.tsx Korean text to i18n keys | P0 | M | [x] | - |
+| I18N-002 | Convert constants.ts templates to i18n | P1 | L | [ ] | I18N-001 |
+| TYPE-001 | Replace `any` types with proper interfaces | P1 | S | [ ] | - |
+| TYPE-002 | Add missing type hints in Python backend | P2 | M | [ ] | - |
+| PERF-001 | Add useMemo to Home.tsx filteredTemplates | P2 | XS | [ ] | - |
+| PERF-002 | Extract and memoize NavButton component | P2 | S | [ ] | - |
+| PERF-003 | Add DB indexes for user_id and created_at | P1 | S | [ ] | - |
+| A11Y-001 | Add ARIA labels to buttons and interactive elements | P2 | M | [ ] | - |
+| DUP-001 | Extract PDF export to shared utility | P2 | M | [ ] | - |
+
+**Files to Modify**:
+```
+App.tsx
+constants.ts
+views/Home.tsx
+views/ContractDetail.tsx
+views/Report.tsx
+components/Layout.tsx
+locales/ko/common.json
+locales/en/common.json
+backend/app/models/contract.py
+```
+
+---
+
+### Sprint 0.5: Infrastructure (1 day)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| INFRA-001 | Add Rate Limiting middleware (Redis) | P0 | M | [ ] | BE-005 |
+| INFRA-002 | Implement blockchain process_anchor function | P1 | L | [ ] | - |
+| INFRA-003 | Add resource limits to Docker containers | P1 | S | [ ] | - |
+| INFRA-004 | Add HTTPS/SSL to nginx configuration | P1 | M | [ ] | - |
+
+**Files to Modify**:
+```
+backend/app/main.py
+backend/app/api/blockchain.py
+docker-compose.yml
+nginx.conf
+```
+
+---
+
+### Phase 0 Summary
+
+| Sprint | Total | P0 | P1 | P2 |
+|--------|-------|----|----|----
+| 0.1 Security | 6 | 5 | 1 | 0 |
+| 0.2 Bug Fixes | 5 | 1 | 4 | 0 |
+| 0.3 Deployment | 5 | 2 | 3 | 0 |
+| 0.4 Code Quality | 9 | 1 | 4 | 4 |
+| 0.5 Infrastructure | 4 | 1 | 3 | 0 |
+| **Total** | **29** | **10** | **15** | **4** |
 
 ---
 

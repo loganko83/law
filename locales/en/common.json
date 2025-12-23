@@ -382,6 +382,19 @@
     "saveHint": "Press save to record current state in history.",
     "characters": "chars"
   },
+  "defaults": {
+    "userName": "John Doe",
+    "userEmail": "john@example.com",
+    "userPhone": "010-1234-5678",
+    "businessType": "Freelance Developer",
+    "businessDescription": "Providing web frontend and backend development services for startups.",
+    "legalConcerns": "Payment delays and excessive maintenance request protection"
+  },
+  "timeline": {
+    "aiAnalysisCompleted": "AI Analysis Completed",
+    "signatureComplete": "E-Signature Complete (DocuSign)",
+    "contractDraftCreated": "Contract Draft Created"
+  },
   "auth": {
     "login": "Login",
     "register": "Register",

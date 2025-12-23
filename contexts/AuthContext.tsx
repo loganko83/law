@@ -248,10 +248,79 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [logout]);
 
-  // Check auth on mount
+  // Check auth on mount - only run once
   useEffect(() => {
-    refreshUser();
-  }, [refreshUser]);
+    let isMounted = true;
+
+    const initAuth = async () => {
+      if (!getAccessToken()) {
+        if (isMounted) {
+          setState({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null,
+          });
+        }
+        return;
+      }
+
+      try {
+        const user = await authApi.getCurrentUser();
+        if (isMounted) {
+          cacheUser(user);
+          setState({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+        }
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          try {
+            await authApi.refreshToken();
+            const user = await authApi.getCurrentUser();
+            if (isMounted) {
+              cacheUser(user);
+              setState({
+                user,
+                isAuthenticated: true,
+                isLoading: false,
+                error: null,
+              });
+            }
+          } catch {
+            if (isMounted) {
+              clearTokens();
+              cacheUser(null);
+              setState({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+                error: null,
+              });
+            }
+          }
+        } else if (isMounted) {
+          clearTokens();
+          cacheUser(null);
+          setState({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null,
+          });
+        }
+      }
+    };
+
+    initAuth();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array - only run on mount
 
   // Memoize context value
   const value = useMemo<AuthContextType>(

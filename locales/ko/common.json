@@ -397,6 +397,19 @@
     "saveHint": "저장 버튼을 누르면 현재 상태가 히스토리에 기록됩니다.",
     "characters": "자"
   },
+  "defaults": {
+    "userName": "홍길동",
+    "userEmail": "hong@example.com",
+    "userPhone": "010-1234-5678",
+    "businessType": "프리랜서 개발자",
+    "businessDescription": "스타트업을 대상으로 웹 프론트엔드 및 백엔드 개발 용역을 제공합니다.",
+    "legalConcerns": "대금 미지급 문제와 과도한 유지보수 요구 방어"
+  },
+  "timeline": {
+    "aiAnalysisCompleted": "AI 분석 완료",
+    "signatureComplete": "전자서명 완료 (DocuSign)",
+    "contractDraftCreated": "계약서 초안 작성"
+  },
   "auth": {
     "login": "로그인",
     "register": "회원가입",
