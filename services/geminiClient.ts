@@ -100,7 +100,7 @@ export const generateWithRAG = async (
             },
           },
         ],
-      },
+      } as Record<string, unknown>,
     });
 
     // Extract citations from grounding metadata if available

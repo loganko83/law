@@ -6,7 +6,7 @@ from app.core.config import settings
 from app.core.error_handlers import register_exception_handlers
 from app.core.logging import setup_logging, get_logger, RequestLoggingMiddleware
 from app.db.base import init_db, close_db
-from app.api import auth, contracts, analysis, did, signatures, blockchain, parties, versions, sharing, templates, subscriptions, b2b
+from app.api import auth, contracts, analysis, did, signatures, blockchain, parties, versions, sharing, templates, subscriptions, b2b, documents
 
 # Initialize structured logging
 setup_logging()
@@ -68,6 +68,7 @@ app.include_router(sharing.router)
 app.include_router(templates.router)
 app.include_router(subscriptions.router)
 app.include_router(b2b.router)
+app.include_router(documents.router)
 
 
 @app.get("/")

@@ -19,7 +19,9 @@ from app.schemas.analysis import (
 )
 from app.api.auth import get_current_user
 from app.services.ai_analyzer import analyze_contract_text
+from app.services.gemini import get_gemini_client, GeminiClient
 from app.core.config import settings
+from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/ai", tags=["AI Analysis"])
 
@@ -244,3 +246,95 @@ async def list_contract_analyses(
     analyses = result.scalars().all()
 
     return analyses
+
+
+# ==================== Quick Analysis Endpoints ====================
+# These don't require authenticated user or stored contracts
+
+class QuickAnalyzeRequest(BaseModel):
+    """Request for quick contract analysis."""
+    contract_text: str = Field(..., min_length=50, description="Contract text to analyze")
+    business_type: Optional[str] = Field(None, description="User's business type for personalization")
+    business_description: Optional[str] = Field(None, description="User's business description")
+    legal_concerns: Optional[str] = Field(None, description="User's legal concerns")
+
+
+class RiskItemResponse(BaseModel):
+    """Risk item in analysis response."""
+    id: str
+    title: str
+    description: str
+    level: str
+    suggestion: Optional[str] = None
+    clause: Optional[str] = None
+
+
+class QuickAnalysisResponse(BaseModel):
+    """Response for quick contract analysis."""
+    score: int
+    summary: str
+    risks: list[RiskItemResponse]
+    questions: list[str]
+    model: str
+    error: Optional[str] = None
+
+
+@router.post("/quick-analyze", response_model=QuickAnalysisResponse)
+async def quick_analyze(
+    request: QuickAnalyzeRequest,
+    gemini: GeminiClient = Depends(get_gemini_client)
+):
+    """
+    Quickly analyze contract text without authentication.
+
+    This endpoint is useful for:
+    - Preview/demo analysis
+    - Anonymous quick checks
+    - Frontend integration testing
+
+    Note: Results are not stored. For persistent analysis, use POST /ai/analyze.
+    """
+    # Build user context if provided
+    user_context = None
+    if request.business_type or request.business_description or request.legal_concerns:
+        user_context = {
+            "business_type": request.business_type,
+            "business_description": request.business_description,
+            "legal_concerns": request.legal_concerns
+        }
+
+    result = await gemini.analyze_contract(
+        contract_text=request.contract_text,
+        user_context=user_context
+    )
+
+    return QuickAnalysisResponse(
+        score=result.score,
+        summary=result.summary,
+        risks=[
+            RiskItemResponse(
+                id=r.id,
+                title=r.title,
+                description=r.description,
+                level=r.level.value,
+                suggestion=r.suggestion,
+                clause=r.clause
+            )
+            for r in result.risks
+        ],
+        questions=result.questions,
+        model=result.model,
+        error=result.error
+    )
+
+
+@router.get("/health")
+async def ai_health_check(
+    gemini: GeminiClient = Depends(get_gemini_client)
+):
+    """Check AI service health."""
+    return {
+        "status": "healthy" if gemini.is_available() else "degraded",
+        "mock_mode": gemini._mock_mode,
+        "model": "gemini-2.0-flash-exp"
+    }

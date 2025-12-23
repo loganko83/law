@@ -29,10 +29,22 @@ class Settings(BaseSettings):
     # AI
     GEMINI_API_KEY: str = ""
 
-    # File Storage
+    # File Storage - Local
     UPLOAD_DIR: str = "./uploads"
     MAX_FILE_SIZE: int = 50 * 1024 * 1024  # 50MB
     ALLOWED_EXTENSIONS: list = ["pdf", "docx", "doc", "jpg", "jpeg", "png"]
+
+    # S3/MinIO Storage
+    S3_ENABLED: bool = False
+    S3_ENDPOINT_URL: Optional[str] = None  # For MinIO: http://localhost:9000
+    S3_ACCESS_KEY: str = ""
+    S3_SECRET_KEY: str = ""
+    S3_BUCKET_NAME: str = "safecon-documents"
+    S3_REGION: str = "ap-northeast-2"
+
+    # OCR Service
+    OCR_ENABLED: bool = True
+    OCR_PROVIDER: str = "tesseract"  # tesseract, google-vision, azure-ocr
 
     # CORS
     CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:3000"]

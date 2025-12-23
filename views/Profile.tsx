@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { User, Settings, CreditCard, LogOut, Shield, Mail, Phone, ChevronRight, FileClock, History, Edit2, Calendar, X, Check, Trash2, Plus, Smartphone, Database, Brain, Sun, Moon } from 'lucide-react';
+import { User, Settings, CreditCard, LogOut, LogIn, Shield, Mail, Phone, ChevronRight, FileClock, History, Edit2, Calendar, X, Check, Trash2, Plus, Smartphone, Database, Brain, Sun, Moon } from 'lucide-react';
 import { Contract, UserProfile } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ProfileProps {
   userProfile: UserProfile;
   onUpdateProfile: (profile: UserProfile) => void;
   onBack: () => void;
+  onLogin?: () => void;
 }
 
 // Mock History Data
@@ -20,9 +22,15 @@ const HISTORY_CONTRACTS: Partial<Contract>[] = [
     { id: 'h4', title: '2021 프리랜서 용역 계약', type: 'Freelance', date: '2021-02-10', partyName: '스타트업A' },
 ];
 
-export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, onBack }) => {
+export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, onBack, onLogin }) => {
   const { t } = useTranslation();
   const { resolvedTheme } = useTheme();
+  const { isAuthenticated, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    onBack();
+  };
 
   // Payment State
   const [savedCards, setSavedCards] = useState([
@@ -212,13 +220,22 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
             <MenuItem icon={<Settings size={18} />} label={t('profile.appSettings')} />
         </div>
 
-        <div className="pt-4">
-            <button
-                onClick={onBack}
-                className="w-full py-3.5 text-red-500 font-semibold text-sm flex items-center justify-center gap-2 rounded-xl bg-red-50 hover:bg-red-100 transition-colors"
-            >
-                <LogOut size={18} /> {t('profile.logout')}
-            </button>
+        <div className="pt-4 space-y-3">
+            {isAuthenticated ? (
+                <button
+                    onClick={handleLogout}
+                    className="w-full py-3.5 text-red-500 font-semibold text-sm flex items-center justify-center gap-2 rounded-xl bg-red-50 hover:bg-red-100 transition-colors"
+                >
+                    <LogOut size={18} /> {t('profile.logout')}
+                </button>
+            ) : (
+                <button
+                    onClick={onLogin}
+                    className="w-full py-3.5 text-blue-600 font-semibold text-sm flex items-center justify-center gap-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
+                >
+                    <LogIn size={18} /> {t('auth.login')}
+                </button>
+            )}
         </div>
       </div>
 

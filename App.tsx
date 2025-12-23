@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { Home } from './views/Home';
 import { Upload } from './views/Upload';
@@ -11,29 +11,46 @@ import { LegalServices } from './views/LegalServices';
 import { ContentProofGenerator } from './views/ContentProofGenerator';
 import { LegalQA } from './views/LegalQA';
 import { DocuSignSigning } from './views/DocuSignSigning';
+import { Login } from './views/Login';
+import { Register } from './views/Register';
 import { Contract, ViewState, ContractAnalysis, ContractStatus, UserProfile } from './types';
 import { MOCK_CONTRACTS, MOCK_ANALYSIS_RESULT, STANDARD_TEMPLATES } from './constants';
 import { ToastProvider } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { OfflineIndicator } from './components/OfflineIndicator';
 
-const App: React.FC = () => {
+// Inner App component that uses auth context
+const AppContent: React.FC = () => {
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [currentView, setCurrentView] = useState<ViewState>('HOME');
   const [contracts, setContracts] = useState<Contract[]>(MOCK_CONTRACTS);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<ContractAnalysis>(MOCK_ANALYSIS_RESULT);
-  
-  // RAG: Centralized User Context
+
+  // RAG: Centralized User Context - sync with auth user when available
   const [userProfile, setUserProfile] = useState<UserProfile>({
-      name: '홍길동',
-      email: 'hong@example.com',
-      phone: '010-1234-5678',
-      businessType: '프리랜서 개발자',
-      businessDescription: '스타트업을 대상으로 웹 프론트엔드 및 백엔드 개발 용역을 제공합니다.',
-      legalConcerns: '대금 미지급 문제와 과도한 유지보수 요구 방어'
+    name: '홍길동',
+    email: 'hong@example.com',
+    phone: '010-1234-5678',
+    businessType: '프리랜서 개발자',
+    businessDescription: '스타트업을 대상으로 웹 프론트엔드 및 백엔드 개발 용역을 제공합니다.',
+    legalConcerns: '대금 미지급 문제와 과도한 유지보수 요구 방어'
   });
+
+  // Sync user profile with authenticated user data
+  useEffect(() => {
+    if (user) {
+      setUserProfile(prev => ({
+        ...prev,
+        name: user.name || prev.name,
+        email: user.email,
+        phone: user.phone || prev.phone,
+      }));
+    }
+  }, [user]);
 
   // Handlers
   const handleNavigate = (view: ViewState) => {
@@ -206,10 +223,11 @@ const App: React.FC = () => {
         );
       case 'PROFILE':
         return (
-            <Profile 
+            <Profile
                 userProfile={userProfile}
                 onUpdateProfile={setUserProfile}
-                onBack={() => handleNavigate('HOME')} 
+                onBack={() => handleNavigate('HOME')}
+                onLogin={() => handleNavigate('LOGIN')}
             />
         );
       case 'LEGAL_SERVICES':
@@ -233,10 +251,26 @@ const App: React.FC = () => {
       case 'DOCUSIGN_SIGNING':
           if (!selectedContract) return null;
           return (
-              <DocuSignSigning 
+              <DocuSignSigning
                 contract={selectedContract}
                 onSigned={handleDocuSignComplete}
                 onCancel={() => handleNavigate('DETAIL')}
+              />
+          );
+      case 'LOGIN':
+          return (
+              <Login
+                onBack={() => handleNavigate('HOME')}
+                onRegister={() => handleNavigate('REGISTER')}
+                onSuccess={() => handleNavigate('HOME')}
+              />
+          );
+      case 'REGISTER':
+          return (
+              <Register
+                onBack={() => handleNavigate('LOGIN')}
+                onLogin={() => handleNavigate('LOGIN')}
+                onSuccess={() => handleNavigate('HOME')}
               />
           );
       default:
@@ -244,31 +278,58 @@ const App: React.FC = () => {
     }
   };
 
-  // Full screen views without bottom nav
-  if (['DETAIL', 'DOCUMENT', 'TEMPLATE_PREVIEW', 'CONTENT_PROOF', 'LEGAL_QA', 'DOCUSIGN_SIGNING'].includes(currentView)) {
+  // Show loading spinner while checking auth
+  if (authLoading) {
     return (
-      <ErrorBoundary>
-        <ThemeProvider>
-          <ToastProvider>
-            <OfflineIndicator />
-            <div className="max-w-md mx-auto min-h-screen bg-slate-50 dark:bg-slate-900 shadow-2xl transition-colors">
-              {renderContent()}
-            </div>
-          </ToastProvider>
-        </ThemeProvider>
-      </ErrorBoundary>
+      <div className="max-w-md mx-auto min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  // Full screen views without bottom nav
+  const fullScreenViews = [
+    'DETAIL',
+    'DOCUMENT',
+    'TEMPLATE_PREVIEW',
+    'CONTENT_PROOF',
+    'LEGAL_QA',
+    'DOCUSIGN_SIGNING',
+    'LOGIN',
+    'REGISTER'
+  ];
+
+  if (fullScreenViews.includes(currentView)) {
+    return (
+      <>
+        <OfflineIndicator />
+        <div className="max-w-md mx-auto min-h-screen bg-slate-50 dark:bg-slate-900 shadow-2xl transition-colors">
+          {renderContent()}
+        </div>
+      </>
     );
   }
 
   return (
+    <>
+      <OfflineIndicator />
+      <Layout currentView={currentView} onChangeView={handleNavigate}>
+        {renderContent()}
+      </Layout>
+    </>
+  );
+};
+
+// Main App wrapper with providers
+const App: React.FC = () => {
+  return (
     <ErrorBoundary>
       <ThemeProvider>
-        <ToastProvider>
-          <OfflineIndicator />
-          <Layout currentView={currentView} onChangeView={handleNavigate}>
-            {renderContent()}
-          </Layout>
-        </ToastProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <AppContent />
+          </ToastProvider>
+        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

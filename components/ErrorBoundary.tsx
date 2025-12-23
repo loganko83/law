@@ -14,6 +14,9 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
+  public state: State;
+  public props!: Props;
+
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -28,7 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    this.setState({ errorInfo });
+    (this as Component<Props, State>).setState({ errorInfo });
 
     // Log error for debugging
     console.error('ErrorBoundary caught an error:', error, errorInfo);
@@ -38,7 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleRetry = (): void => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
+    (this as Component<Props, State>).setState({ hasError: false, error: null, errorInfo: null });
   };
 
   handleGoHome = (): void => {

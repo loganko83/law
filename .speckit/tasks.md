@@ -114,19 +114,19 @@ backend/app/api/v1/contracts.py
 
 | ID | Task | Priority | Effort | Status | Dependencies |
 |----|------|----------|--------|--------|--------------|
-| DOC-001 | Create S3/MinIO storage service | P0 | M | [ ] | BE-001 |
-| DOC-002 | Configure storage bucket and credentials | P0 | S | [ ] | DOC-001 |
-| DOC-003 | Create file upload endpoint | P0 | M | [ ] | DOC-001, CTR-004 |
-| DOC-004 | Implement file type validation | P0 | S | [ ] | DOC-003 |
-| DOC-005 | Implement file size validation (50MB max) | P0 | S | [ ] | DOC-003 |
-| DOC-006 | Create SHA-256 hash utility | P0 | S | [ ] | - |
-| DOC-007 | Generate content hash on upload | P0 | S | [ ] | DOC-006 |
-| DOC-008 | Create OCR service interface | P0 | S | [ ] | - |
+| DOC-001 | Create S3/MinIO storage service | P0 | M | [x] | BE-001 |
+| DOC-002 | Configure storage bucket and credentials | P0 | S | [x] | DOC-001 |
+| DOC-003 | Create file upload endpoint | P0 | M | [x] | DOC-001, CTR-004 |
+| DOC-004 | Implement file type validation | P0 | S | [x] | DOC-003 |
+| DOC-005 | Implement file size validation (50MB max) | P0 | S | [x] | DOC-003 |
+| DOC-006 | Create SHA-256 hash utility | P0 | S | [x] | - |
+| DOC-007 | Generate content hash on upload | P0 | S | [x] | DOC-006 |
+| DOC-008 | Create OCR service interface | P0 | S | [x] | - |
 | DOC-009 | Integrate Google Cloud Vision API | P1 | M | [ ] | DOC-008 |
-| DOC-010 | Alternative: Integrate Tesseract (self-hosted) | P2 | L | [ ] | DOC-008 |
-| DOC-011 | Extract text and store in database | P0 | M | [ ] | DOC-009 |
-| DOC-012 | Create GET /documents/{id} endpoint | P1 | S | [ ] | CTR-004 |
-| DOC-013 | Create presigned URL for download | P1 | M | [ ] | DOC-001 |
+| DOC-010 | Alternative: Integrate Tesseract (self-hosted) | P2 | L | [x] | DOC-008 |
+| DOC-011 | Extract text and store in database | P0 | M | [x] | DOC-009 |
+| DOC-012 | Create GET /documents/{id} endpoint | P1 | S | [x] | CTR-004 |
+| DOC-013 | Create presigned URL for download | P1 | M | [x] | DOC-001 |
 | DOC-014 | Write unit tests for documents | P1 | M | [ ] | DOC-003..013 |
 
 **Files to Create**:
@@ -143,17 +143,17 @@ backend/app/utils/hash.py
 
 | ID | Task | Priority | Effort | Status | Dependencies |
 |----|------|----------|--------|--------|--------------|
-| AI-001 | Create Gemini client service | P0 | M | [ ] | BE-001 |
+| AI-001 | Create Gemini client service | P0 | M | [x] | BE-001 |
 | AI-002 | Migrate risk patterns from frontend | P0 | S | [ ] | AI-001 |
-| AI-003 | Create ContractAnalysis model | P0 | M | [ ] | BE-003 |
-| AI-004 | Create RiskItem embedded model | P0 | S | [ ] | AI-003 |
-| AI-005 | Create Pydantic schemas for Analysis | P0 | S | [ ] | AI-003 |
-| AI-006 | Create analysis prompt template | P0 | M | [ ] | AI-001 |
-| AI-007 | Create POST /analysis endpoint | P0 | M | [ ] | AI-001..006 |
+| AI-003 | Create ContractAnalysis model | P0 | M | [x] | BE-003 |
+| AI-004 | Create RiskItem embedded model | P0 | S | [x] | AI-003 |
+| AI-005 | Create Pydantic schemas for Analysis | P0 | S | [x] | AI-003 |
+| AI-006 | Create analysis prompt template | P0 | M | [x] | AI-001 |
+| AI-007 | Create POST /analysis endpoint | P0 | M | [x] | AI-001..006 |
 | AI-008 | Implement pattern detection | P0 | M | [ ] | AI-002 |
 | AI-009 | Combine AI + pattern results | P0 | M | [ ] | AI-007, AI-008 |
-| AI-010 | Create GET /analysis/{id} endpoint | P0 | S | [ ] | AI-003 |
-| AI-011 | Add async background task option | P2 | L | [ ] | AI-007 |
+| AI-010 | Create GET /analysis/{id} endpoint | P0 | S | [x] | AI-003 |
+| AI-011 | Add async background task option | P2 | L | [x] | AI-007 |
 | AI-012 | Write unit tests for analysis | P1 | M | [ ] | AI-007..010 |
 
 **Files to Create**:
@@ -173,10 +173,10 @@ backend/app/api/v1/analysis.py
 | FE-001 | Create API client service (axios) | P0 | M | [x] | - |
 | FE-002 | Add auth interceptor for JWT | P0 | S | [x] | FE-001 |
 | FE-003 | Add refresh token interceptor | P0 | M | [x] | FE-002 |
-| FE-004 | Create AuthContext with state | P0 | M | [ ] | FE-001 |
-| FE-005 | Create Login view | P0 | M | [ ] | FE-004 |
-| FE-006 | Create Register view | P0 | M | [ ] | FE-004 |
-| FE-007 | Add auth routes to App.tsx | P0 | S | [ ] | FE-005, FE-006 |
+| FE-004 | Create AuthContext with state | P0 | M | [x] | FE-001 |
+| FE-005 | Create Login view | P0 | M | [x] | FE-004 |
+| FE-006 | Create Register view | P0 | M | [x] | FE-004 |
+| FE-007 | Add auth routes to App.tsx | P0 | S | [x] | FE-005, FE-006 |
 | FE-008 | Update Upload.tsx to use API | P0 | M | [ ] | FE-001 |
 | FE-009 | Update Report.tsx to fetch from API | P0 | M | [ ] | FE-001 |
 | FE-010 | Update Home.tsx to fetch contracts | P0 | M | [ ] | FE-001 |

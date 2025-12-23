@@ -58,16 +58,18 @@ export interface UserProfile {
   legalConcerns: string; // e.g., "Payment delays, IP theft"
 }
 
-export type ViewState = 
-  | 'HOME' 
-  | 'UPLOAD' 
-  | 'ANALYSIS_LOADING' 
-  | 'REPORT' 
-  | 'DETAIL' 
-  | 'DOCUMENT' 
-  | 'TEMPLATE_PREVIEW' 
+export type ViewState =
+  | 'HOME'
+  | 'UPLOAD'
+  | 'ANALYSIS_LOADING'
+  | 'REPORT'
+  | 'DETAIL'
+  | 'DOCUMENT'
+  | 'TEMPLATE_PREVIEW'
   | 'PROFILE'
-  | 'LEGAL_SERVICES'        
-  | 'CONTENT_PROOF'         
+  | 'LEGAL_SERVICES'
+  | 'CONTENT_PROOF'
   | 'LEGAL_QA'
-  | 'DOCUSIGN_SIGNING';
+  | 'DOCUSIGN_SIGNING'
+  | 'LOGIN'
+  | 'REGISTER';
