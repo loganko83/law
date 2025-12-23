@@ -2,7 +2,7 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>SafeContract - AI Legal Assistant</title>
     <meta name="description" content="AI-powered contract analysis and legal assistance" />
 
@@ -75,6 +75,16 @@
       .no-scrollbar {
           -ms-overflow-style: none;  /* IE and Edge */
           scrollbar-width: none;  /* Firefox */
+      }
+
+      /* iOS Safe Area Support */
+      .safe-area-bottom {
+        padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+      }
+
+      /* Fixed bottom nav support */
+      .pb-safe {
+        padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
       }
     </style>
   <script type="importmap">

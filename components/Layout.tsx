@@ -14,19 +14,19 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeV
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 relative max-w-md mx-auto shadow-2xl overflow-hidden flex flex-col transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 max-w-md mx-auto shadow-2xl transition-colors relative">
       {/* Header with Theme Toggle */}
       <div className="absolute top-4 right-4 z-40">
         <ThemeToggle />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
+      {/* Main Content - scrollable area with bottom padding for nav */}
+      <div className="min-h-screen overflow-y-auto pb-safe">
         {children}
       </div>
 
-      {/* Bottom Navigation */}
-      <nav className="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 px-4 py-3 flex justify-around items-center z-50 pb-6 transition-colors" data-testid="bottom-nav">
+      {/* Bottom Navigation - fixed at bottom */}
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 px-4 py-3 flex justify-around items-center z-50 safe-area-bottom transition-colors" data-testid="bottom-nav">
         <NavButton
           icon={<Home size={22} />}
           label={t('nav.home')}
