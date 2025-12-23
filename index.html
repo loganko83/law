@@ -8,6 +8,7 @@
 
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#3B82F6" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="SafeCon" />
@@ -18,75 +19,8 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/law/icons/icon-16.png" />
     <link rel="apple-touch-icon" href="/law/icons/icon-192.png" />
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-      /* Light theme (default) */
-      :root {
-        --bg-primary: #F8FAFC;
-        --bg-secondary: #FFFFFF;
-        --bg-tertiary: #F1F5F9;
-        --text-primary: #1E293B;
-        --text-secondary: #64748B;
-        --text-muted: #94A3B8;
-        --border-color: #E2E8F0;
-        --accent-color: #3B82F6;
-        --accent-hover: #2563EB;
-      }
-
-      /* Dark theme */
-      [data-theme="dark"] {
-        --bg-primary: #0F172A;
-        --bg-secondary: #1E293B;
-        --bg-tertiary: #334155;
-        --text-primary: #F1F5F9;
-        --text-secondary: #CBD5E1;
-        --text-muted: #64748B;
-        --border-color: #334155;
-        --accent-color: #60A5FA;
-        --accent-hover: #3B82F6;
-      }
-
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: var(--bg-primary);
-        color: var(--text-primary);
-        -webkit-tap-highlight-color: transparent;
-        transition: background-color 0.2s ease, color 0.2s ease;
-      }
-
-      /* Dark mode specific overrides */
-      .dark .bg-white { background-color: var(--bg-secondary) !important; }
-      .dark .bg-slate-50 { background-color: var(--bg-primary) !important; }
-      .dark .bg-slate-100 { background-color: var(--bg-tertiary) !important; }
-      .dark .text-slate-800 { color: var(--text-primary) !important; }
-      .dark .text-slate-700 { color: var(--text-primary) !important; }
-      .dark .text-slate-600 { color: var(--text-secondary) !important; }
-      .dark .text-slate-500 { color: var(--text-secondary) !important; }
-      .dark .text-slate-400 { color: var(--text-muted) !important; }
-      .dark .border-slate-100 { border-color: var(--border-color) !important; }
-      .dark .border-slate-200 { border-color: var(--border-color) !important; }
-
-      /* Hide scrollbar for Chrome, Safari and Opera */
-      .no-scrollbar::-webkit-scrollbar {
-          display: none;
-      }
-      /* Hide scrollbar for IE, Edge and Firefox */
-      .no-scrollbar {
-          -ms-overflow-style: none;  /* IE and Edge */
-          scrollbar-width: none;  /* Firefox */
-      }
-
-      /* iOS Safe Area Support */
-      .safe-area-bottom {
-        padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
-      }
-
-      /* Fixed bottom nav support */
-      .pb-safe {
-        padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
-      }
-    </style>
   <script type="importmap">
 {
   "imports": {
