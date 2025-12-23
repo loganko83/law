@@ -48,7 +48,7 @@ services/geminiClient.ts (remove or proxy)
 | BUG-002 | Fix memory leak in OfflineIndicator (setTimeout cleanup) | P1 | XS | [x] | - |
 | BUG-003 | Fix Report.tsx interval cleanup on score change | P1 | XS | [x] | - |
 | BUG-004 | Add error handling to Upload.tsx fetch operations | P1 | S | [x] | - |
-| BUG-005 | Fix pagination count query (use func.count) | P1 | S | [ ] | - |
+| BUG-005 | Fix pagination count query (use func.count) | P1 | S | [x] | - |
 
 **Files to Modify**:
 ```
@@ -91,8 +91,8 @@ Dockerfile
 | TYPE-002 | Add missing type hints in Python backend | P2 | M | [ ] | - |
 | PERF-001 | Add useMemo to Home.tsx filteredTemplates | P2 | XS | [x] | - |
 | PERF-002 | Extract and memoize NavButton component | P2 | S | [x] | - |
-| PERF-003 | Add DB indexes for user_id and created_at | P1 | S | [ ] | - |
-| A11Y-001 | Add ARIA labels to buttons and interactive elements | P2 | M | [ ] | - |
+| PERF-003 | Add DB indexes for user_id and created_at | P1 | S | [x] | - |
+| A11Y-001 | Add ARIA labels to buttons and interactive elements | P2 | M | [x] | - |
 | DUP-001 | Extract PDF export to shared utility | P2 | M | [ ] | - |
 
 **Files to Modify**:
@@ -116,7 +116,7 @@ backend/app/models/contract.py
 |----|------|----------|--------|--------|--------------|
 | INFRA-001 | Add Rate Limiting middleware (Redis) | P0 | M | [ ] | BE-005 |
 | INFRA-002 | Implement blockchain process_anchor function | P1 | L | [ ] | - |
-| INFRA-003 | Add resource limits to Docker containers | P1 | S | [ ] | - |
+| INFRA-003 | Add resource limits to Docker containers | P1 | S | [x] | - |
 | INFRA-004 | Add HTTPS/SSL to nginx configuration | P1 | M | [ ] | - |
 
 **Files to Modify**:

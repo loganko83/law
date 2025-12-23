@@ -91,10 +91,13 @@ export const Home: React.FC<HomeProps> = ({ contracts, onContractClick, onNewChe
           <button
             onClick={() => setShowNotifications(!showNotifications)}
             data-testid="btn-notifications"
+            aria-label={t('notifications.title')}
+            aria-expanded={showNotifications}
+            aria-haspopup="true"
             className={`p-3 min-w-[44px] min-h-[44px] rounded-full border shadow-sm relative transition-colors flex items-center justify-center ${showNotifications ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-100'}`}
           >
-            <Bell size={20} className={showNotifications ? 'text-blue-600' : 'text-slate-600'} />
-            <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+            <Bell size={20} className={showNotifications ? 'text-blue-600' : 'text-slate-600'} aria-hidden="true" />
+            <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" aria-label="unread notifications"></span>
           </button>
         </div>
 
@@ -109,7 +112,7 @@ export const Home: React.FC<HomeProps> = ({ contracts, onContractClick, onNewChe
                 >
                     <div className="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                         <span className="text-xs font-bold text-slate-600">{t('notifications.title')}</span>
-                        <button onClick={() => setShowNotifications(false)} className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-slate-100 rounded-lg"><X size={16} className="text-slate-400" /></button>
+                        <button onClick={() => setShowNotifications(false)} aria-label={t('common.close')} className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-slate-100 rounded-lg"><X size={16} className="text-slate-400" aria-hidden="true" /></button>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
                         {notifications.map(n => (

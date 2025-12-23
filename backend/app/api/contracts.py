@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from uuid import UUID, uuid4
@@ -85,15 +85,15 @@ async def list_contracts(
 
     query = query.order_by(Contract.created_at.desc())
 
-    # Count total
-    count_query = select(Contract).where(Contract.user_id == current_user.id)
+    # Count total using func.count() for efficiency
+    count_query = select(func.count(Contract.id)).where(Contract.user_id == current_user.id)
     if status:
         count_query = count_query.where(Contract.status == status)
     if contract_type:
         count_query = count_query.where(Contract.contract_type == contract_type)
 
     result = await db.execute(count_query)
-    total = len(result.scalars().all())
+    total = result.scalar() or 0
 
     # Apply pagination
     query = query.offset((page - 1) * page_size).limit(page_size)

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Enum, Text, Integer, ForeignKey, Boolean
+from sqlalchemy import Column, String, DateTime, Enum, Text, Integer, ForeignKey, Boolean, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
@@ -38,9 +38,14 @@ class PartyRole(str, enum.Enum):
 
 class Contract(Base):
     __tablename__ = "contracts"
+    __table_args__ = (
+        Index('ix_contracts_user_id', 'user_id'),
+        Index('ix_contracts_created_at', 'created_at'),
+        Index('ix_contracts_user_status', 'user_id', 'status'),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     title = Column(String(500), nullable=False)
     contract_type = Column(Enum(ContractType), default=ContractType.OTHER)
     status = Column(Enum(ContractStatus), default=ContractStatus.DRAFT)
