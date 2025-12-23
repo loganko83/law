@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ContractAnalysis, UserProfile } from '../types';
 import { analyzeContract } from '../services/contractAnalysis';
 import { useToast } from '../components/Toast';
+import { contractsApi, analysisApi } from '../services/api';
 
 interface UploadProps {
   onAnalyze: (analysis: ContractAnalysis, contractText: string) => void;
@@ -130,7 +131,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
     setAnalysisProgress(t('upload.processing'));
 
     try {
-      // Step 1: Extract text from file
+      // Step 1: Extract text from file (for fallback/local processing)
       setAnalysisProgress(t('upload.extractingText'));
       let contractText = '';
 
@@ -165,24 +166,71 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
         throw new Error(t('upload.extractionError', 'Could not extract sufficient text from the document. Please try a different file format.'));
       }
 
-      // Step 2: Build user context for personalized analysis
-      let userContext = '';
-      if (userProfile) {
-        userContext = `User is a ${userProfile.businessType}.
-        Business: ${userProfile.businessDescription}
-        Known concerns: ${userProfile.legalConcerns}`;
-      }
+      // Step 2: Create contract via API
+      setAnalysisProgress(t('upload.creatingContract', 'Creating contract...'));
+      const contract = await contractsApi.create({
+        title: file.name,
+        description: `Contract uploaded from ${file.name}`,
+        contract_type: 'uploaded',
+      });
 
-      // Step 3: Run AI analysis
+      // Step 3: Upload document to contract
+      setAnalysisProgress(t('upload.uploadingDocument', 'Uploading document...'));
+      await contractsApi.uploadDocument(contract.id, file);
+
+      // Step 4: Trigger analysis via API
       setAnalysisProgress(t('upload.aiAnalyzing'));
-      const analysis = await analyzeContract(contractText, userContext, false);
+      const apiAnalysis = await analysisApi.analyze(contract.id);
 
-      // Step 4: Return results
+      // Step 5: Convert API response to ContractAnalysis type
+      const analysis: ContractAnalysis = {
+        summary: apiAnalysis.summary,
+        score: apiAnalysis.safety_score,
+        risks: apiAnalysis.risks.map((risk, index) => ({
+          id: `risk-${index}`,
+          title: risk.type,
+          description: risk.description,
+          level: risk.severity.toUpperCase() as 'HIGH' | 'MEDIUM' | 'LOW',
+        })),
+        questions: apiAnalysis.questions,
+      };
+
+      // Step 6: Return results
       setAnalysisProgress(t('upload.complete'));
       onAnalyze(analysis, contractText);
 
     } catch (err) {
       console.error('Analysis failed:', err);
+
+      // Handle API errors gracefully with fallback to local analysis
+      if (err instanceof Error && err.message.includes('fetch')) {
+        // Network error - fallback to local analysis
+        try {
+          setAnalysisProgress(t('upload.aiAnalyzing'));
+          let userContext = '';
+          if (userProfile) {
+            userContext = `User is a ${userProfile.businessType}.
+            Business: ${userProfile.businessDescription}
+            Known concerns: ${userProfile.legalConcerns}`;
+          }
+
+          // Extract contract text if not already done
+          let contractText = '';
+          if (file.type.startsWith('text/') || file.name.endsWith('.txt')) {
+            contractText = await file.text();
+          } else {
+            contractText = await file.text().catch(() => '');
+          }
+
+          const analysis = await analyzeContract(contractText, userContext, false);
+          setAnalysisProgress(t('upload.complete'));
+          onAnalyze(analysis, contractText);
+          return;
+        } catch (fallbackErr) {
+          console.error('Fallback analysis failed:', fallbackErr);
+        }
+      }
+
       setError(err instanceof Error ? err.message : t('upload.analysisError', 'Analysis failed. Please try again.'));
       setIsScanning(false);
     }

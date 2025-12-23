@@ -425,6 +425,30 @@ export const blockchainApi = {
     return request<Certificate>(`/blockchain/certificate/${anchorId}`);
   },
 
+  async downloadCertificatePdf(anchorId: string): Promise<void> {
+    const token = getAccessToken();
+    const response = await fetch(`${API_BASE_URL}/blockchain/certificate/${anchorId}/pdf`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new ApiError("Failed to download certificate", response.status);
+    }
+
+    // Create blob and download
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `SafeCon_Certificate_${anchorId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+
   async getContractAnchors(contractId: string): Promise<BlockchainAnchor[]> {
     return request<BlockchainAnchor[]>(
       `/blockchain/contract/${contractId}/anchors`
@@ -493,6 +517,415 @@ export const analysisApi = {
   },
 };
 
+// ==================== Versions API ====================
+
+export interface DocumentVersion {
+  id: string;
+  contract_id: string;
+  version: number;
+  file_name: string;
+  file_size: number;
+  document_hash: string;
+  uploaded_by: string;
+  upload_date: string;
+  is_current: boolean;
+}
+
+export interface VersionComparison {
+  version_a: DocumentVersion;
+  version_b: DocumentVersion;
+  changes_summary: string;
+  similarity_score: number;
+}
+
+export const versionsApi = {
+  async getVersionHistory(contractId: string): Promise<DocumentVersion[]> {
+    return request<DocumentVersion[]>(`/versions/history/${contractId}`);
+  },
+
+  async uploadVersion(contractId: string, file: File): Promise<DocumentVersion> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const token = getAccessToken();
+    const response = await fetch(
+      `${API_BASE_URL}/versions/upload/${contractId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new ApiError(
+        errorData.detail || "Upload failed",
+        response.status
+      );
+    }
+
+    return response.json();
+  },
+
+  async compareVersions(
+    versionAId: string,
+    versionBId: string
+  ): Promise<VersionComparison> {
+    return request<VersionComparison>("/versions/compare", {
+      method: "POST",
+      body: JSON.stringify({
+        version_a_id: versionAId,
+        version_b_id: versionBId,
+      }),
+    });
+  },
+
+  async revertToVersion(contractId: string, version: number): Promise<{
+    message: string;
+    new_current_version: DocumentVersion;
+  }> {
+    return request(`/versions/revert/${contractId}`, {
+      method: "POST",
+      body: JSON.stringify({ version }),
+    });
+  },
+
+  async downloadVersion(versionId: string): Promise<void> {
+    const token = getAccessToken();
+    const response = await fetch(
+      `${API_BASE_URL}/versions/download/${versionId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new ApiError("Failed to download version", response.status);
+    }
+
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get("Content-Disposition");
+    const fileNameMatch = contentDisposition?.match(/filename="(.+)"/);
+    const fileName = fileNameMatch ? fileNameMatch[1] : `document_v${versionId}.pdf`;
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+};
+
+// ==================== Parties API ====================
+
+export interface ContractParty {
+  id: string;
+  contract_id: string;
+  role: "party_a" | "party_b" | "witness";
+  name: string;
+  email: string;
+  phone?: string;
+  signing_status: "pending" | "signed";
+  signed_at?: string;
+  invitation_sent_at?: string;
+}
+
+export const partiesApi = {
+  async inviteParty(data: {
+    contract_id: string;
+    role: "party_a" | "party_b" | "witness";
+    name: string;
+    email: string;
+    phone?: string;
+  }): Promise<ContractParty> {
+    return request<ContractParty>("/parties/invite", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getContractParties(contractId: string): Promise<ContractParty[]> {
+    return request<ContractParty[]>(`/parties/contract/${contractId}`);
+  },
+
+  async removeParty(partyId: string): Promise<void> {
+    await request(`/parties/${partyId}`, {
+      method: "DELETE",
+    });
+  },
+
+  async resendInvite(partyId: string): Promise<{ message: string }> {
+    return request(`/parties/${partyId}/resend-invite`, {
+      method: "POST",
+    });
+  },
+};
+
+// ==================== Sharing API ====================
+
+export interface ShareLink {
+  id: string;
+  contract_id: string;
+  token: string;
+  share_url: string;
+  expires_at: string;
+  allow_download: boolean;
+  password_protected: boolean;
+  access_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export const sharingApi = {
+  async createShareLink(data: {
+    contract_id: string;
+    expires_in_hours?: number;
+    allow_download?: boolean;
+    password?: string;
+  }): Promise<ShareLink> {
+    return request<ShareLink>("/sharing/create", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getMyLinks(contractId?: string): Promise<ShareLink[]> {
+    const query = contractId ? `?contract_id=${contractId}` : "";
+    return request<ShareLink[]>(`/sharing/my-links${query}`);
+  },
+
+  async updateShareLink(
+    token: string,
+    data: {
+      expires_in_hours?: number;
+      allow_download?: boolean;
+      password?: string;
+    }
+  ): Promise<ShareLink> {
+    return request<ShareLink>(`/sharing/update/${token}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async revokeShareLink(token: string): Promise<{ message: string }> {
+    return request(`/sharing/revoke/${token}`, {
+      method: "DELETE",
+    });
+  },
+
+  async accessShared(token: string, password?: string): Promise<{
+    contract: Contract;
+    allow_download: boolean;
+  }> {
+    const body = password ? JSON.stringify({ password }) : undefined;
+    return request(`/sharing/access/${token}`, {
+      method: password ? "POST" : "GET",
+      body,
+    }, false);
+  },
+};
+
+// ==================== Subscriptions API ====================
+
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  plan_type: "free" | "basic" | "pro" | "enterprise";
+  description: string | null;
+  price_monthly: number;
+  price_yearly: number;
+  currency: string;
+  max_contracts: number | null;
+  max_analyses_per_month: number | null;
+  max_signatures_per_month: number | null;
+  max_blockchain_anchors: number | null;
+  max_storage_mb: number;
+  has_ai_analysis: boolean;
+  has_did_signing: boolean;
+  has_blockchain_anchoring: boolean;
+  has_premium_templates: boolean;
+  has_api_access: boolean;
+  has_priority_support: boolean;
+  trial_days: number;
+}
+
+export interface UserSubscription {
+  id: string;
+  plan: SubscriptionPlan;
+  status: "trial" | "active" | "cancelled" | "expired" | "past_due";
+  billing_cycle: "monthly" | "yearly";
+  current_period_start: string | null;
+  current_period_end: string | null;
+  trial_end: string | null;
+  started_at: string;
+}
+
+export interface UsageStats {
+  period_start: string;
+  period_end: string;
+  contracts_created: number;
+  analyses_performed: number;
+  signatures_made: number;
+  blockchain_anchors: number;
+  storage_used_mb: number;
+  api_calls: number;
+  contracts_limit: number | null;
+  analyses_limit: number | null;
+  signatures_limit: number | null;
+  anchors_limit: number | null;
+  storage_limit: number;
+}
+
+export interface Invoice {
+  id: string;
+  invoice_number: string;
+  amount: number;
+  tax_amount: number;
+  total_amount: number;
+  currency: string;
+  is_paid: boolean;
+  issued_at: string;
+  due_date: string | null;
+  pdf_url: string | null;
+}
+
+export const subscriptionsApi = {
+  async getPlans(): Promise<SubscriptionPlan[]> {
+    return request<SubscriptionPlan[]>("/subscriptions/plans", {}, false);
+  },
+
+  async getCurrentSubscription(): Promise<UserSubscription> {
+    return request<UserSubscription>("/subscriptions/current");
+  },
+
+  async subscribe(data: {
+    plan_type: string;
+    billing_cycle?: "monthly" | "yearly";
+    payment_method_id?: string;
+  }): Promise<UserSubscription> {
+    return request<UserSubscription>("/subscriptions/subscribe", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async cancel(): Promise<{ message: string; effective_until: string }> {
+    return request("/subscriptions/cancel", {
+      method: "POST",
+    });
+  },
+
+  async getUsage(): Promise<UsageStats> {
+    return request<UsageStats>("/subscriptions/usage");
+  },
+
+  async getInvoices(skip = 0, limit = 20): Promise<Invoice[]> {
+    return request<Invoice[]>(
+      `/subscriptions/invoices?skip=${skip}&limit=${limit}`
+    );
+  },
+
+  async upgrade(newPlanType: string): Promise<{ message: string; new_plan: string }> {
+    return request(`/subscriptions/upgrade?new_plan_type=${newPlanType}`, {
+      method: "POST",
+    });
+  },
+};
+
+// ==================== B2B API ====================
+
+export interface APIKey {
+  id: string;
+  name: string;
+  key_prefix: string;
+  scopes: string[];
+  created_at: string;
+  expires_at: string | null;
+  last_used_at: string | null;
+  is_active: boolean;
+}
+
+export interface APIKeyCreateResponse extends APIKey {
+  api_key: string;
+}
+
+export interface WebhookConfig {
+  id: string;
+  url: string;
+  events: string[];
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface B2BUsage {
+  period_start: string;
+  period_end: string;
+  api_calls: number;
+  contracts_created: number;
+  analyses_performed: number;
+}
+
+export const b2bApi = {
+  // API Key Management
+  async createApiKey(data: {
+    name: string;
+    scopes?: string[];
+    expires_in_days?: number;
+  }): Promise<APIKeyCreateResponse> {
+    return request<APIKeyCreateResponse>("/b2b/keys", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async listApiKeys(): Promise<APIKey[]> {
+    return request<APIKey[]>("/b2b/keys");
+  },
+
+  async revokeApiKey(keyId: string): Promise<{ message: string }> {
+    return request(`/b2b/keys/${keyId}`, {
+      method: "DELETE",
+    });
+  },
+
+  // Webhooks
+  async createWebhook(data: {
+    url: string;
+    events: string[];
+    secret?: string;
+  }): Promise<WebhookConfig> {
+    return request<WebhookConfig>("/b2b/webhooks", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async listWebhooks(): Promise<WebhookConfig[]> {
+    return request<WebhookConfig[]>("/b2b/webhooks");
+  },
+
+  async deleteWebhook(webhookId: string): Promise<{ message: string }> {
+    return request(`/b2b/webhooks/${webhookId}`, {
+      method: "DELETE",
+    });
+  },
+
+  // Usage
+  async getUsage(): Promise<B2BUsage> {
+    // This requires API key header, so we need special handling
+    return request<B2BUsage>("/b2b/usage");
+  },
+};
+
 // Default export with all APIs
 export default {
   auth: authApi,
@@ -501,4 +934,9 @@ export default {
   signatures: signaturesApi,
   blockchain: blockchainApi,
   analysis: analysisApi,
+  versions: versionsApi,
+  parties: partiesApi,
+  sharing: sharingApi,
+  subscriptions: subscriptionsApi,
+  b2b: b2bApi,
 };

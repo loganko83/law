@@ -8,18 +8,61 @@ import { motion } from 'framer-motion';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useToast } from '../components/Toast';
+import { analysisApi } from '../services/api';
 
 interface ReportProps {
-  analysis: ContractAnalysis;
+  analysis?: ContractAnalysis;
+  analysisId?: string;
   onDone: () => void;
 }
 
-export const Report: React.FC<ReportProps> = ({ analysis, onDone }) => {
+export const Report: React.FC<ReportProps> = ({ analysis: propAnalysis, analysisId, onDone }) => {
   const { t } = useTranslation();
   const toast = useToast();
+  const [analysis, setAnalysis] = useState<ContractAnalysis | null>(propAnalysis || null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [displayScore, setDisplayScore] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // Fetch analysis if analysisId is provided and no analysis prop
+  useEffect(() => {
+    const fetchAnalysis = async () => {
+      if (!propAnalysis && analysisId) {
+        setIsLoading(true);
+        setError(null);
+        try {
+          const response = await analysisApi.getAnalysis(analysisId);
+
+          // Map backend response to frontend ContractAnalysis type
+          const mappedAnalysis: ContractAnalysis = {
+            summary: response.summary,
+            score: response.safety_score,
+            risks: response.risks.map((risk, index) => ({
+              id: `risk-${index}`,
+              title: risk.type,
+              description: risk.description,
+              level: risk.severity.toUpperCase() as RiskLevel
+            })),
+            questions: response.questions
+          };
+
+          setAnalysis(mappedAnalysis);
+        } catch (err) {
+          console.error('Failed to fetch analysis:', err);
+          setError(err instanceof Error ? err.message : 'Failed to load analysis');
+          toast.error(t('common.error'));
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (propAnalysis) {
+        setAnalysis(propAnalysis);
+      }
+    };
+
+    fetchAnalysis();
+  }, [propAnalysis, analysisId, toast, t]);
 
   const handleExportPDF = async () => {
     if (!contentRef.current || isExporting) return;
@@ -81,8 +124,8 @@ export const Report: React.FC<ReportProps> = ({ analysis, onDone }) => {
     // Reset display score when analysis.score changes
     setDisplayScore(0);
 
-    // Handle 0 score case
-    if (analysis.score === 0) {
+    // Handle null or 0 score case
+    if (!analysis || analysis.score === 0) {
       return;
     }
 
@@ -101,7 +144,7 @@ export const Report: React.FC<ReportProps> = ({ analysis, onDone }) => {
     }, incrementTime);
 
     return () => clearInterval(timer);
-  }, [analysis.score]);
+  }, [analysis]);
 
 
   const getScoreColor = (score: number) => {
@@ -111,6 +154,8 @@ export const Report: React.FC<ReportProps> = ({ analysis, onDone }) => {
   };
   
   const handleShare = async () => {
+      if (!analysis) return;
+
       const shareData = {
           title: t('report.shareTitle', 'Contract AI Safety Report'),
           text: `SafeContract ${t('report.analysisResult', 'Analysis Result')}: ${t('report.safetyScore')} ${analysis.score}.\n\n${t('report.summary')}: ${analysis.summary}`,
@@ -130,6 +175,8 @@ export const Report: React.FC<ReportProps> = ({ analysis, onDone }) => {
   };
 
   const handleEmailShare = () => {
+    if (!analysis) return;
+
     const subject = encodeURIComponent(`[SafeContract] ${t('report.emailSubject', 'Contract AI Analysis Report')} - ${analysis.score}`);
     const body = encodeURIComponent(
 `${t('report.emailBody', 'SafeContract Analysis Result')}
@@ -144,6 +191,36 @@ SafeContract - ${t('app.tagline')}
 `);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 size={48} className="animate-spin text-indigo-600 mx-auto mb-4" />
+          <p className="text-slate-600">{t('common.loading', 'Loading...')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error || !analysis) {
+    return (
+      <div className="bg-slate-50 min-h-screen flex items-center justify-center p-6">
+        <Card className="bg-white border-rose-200 shadow-sm p-6 max-w-md">
+          <div className="text-center">
+            <AlertTriangle size={48} className="text-rose-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-slate-800 mb-2">{t('common.error', 'Error')}</h2>
+            <p className="text-slate-600 mb-4">{error || t('report.noAnalysis', 'No analysis data available')}</p>
+            <Button onClick={onDone} fullWidth>
+              {t('common.goBack', 'Go Back')}
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   const circleRadius = 60;
   const circumference = 2 * Math.PI * circleRadius;

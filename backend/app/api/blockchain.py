@@ -1,5 +1,6 @@
 """Blockchain anchoring API endpoints for content proof."""
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -17,6 +18,7 @@ from app.models.contract import Contract, ContractDocument
 from app.models.blockchain import BlockchainRecord, Certificate, AnchorStatus
 from app.api.auth import get_current_user
 from app.services.did_baas import get_did_baas_client, DidBaasClient, DidBaasError
+from app.services.certificate import get_certificate_service
 from app.core.config import settings
 
 router = APIRouter(prefix="/blockchain", tags=["Blockchain Anchoring"])
@@ -490,6 +492,101 @@ async def get_certificate(
         qr_code_url=record.certificate.qr_code_url,
         verification_url=record.certificate.verification_url,
         created_at=record.certificate.created_at
+    )
+
+
+@router.get("/certificate/{anchor_id}/pdf")
+async def download_certificate_pdf(
+    anchor_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Download certificate as PDF."""
+    result = await db.execute(
+        select(BlockchainRecord)
+        .options(
+            selectinload(BlockchainRecord.contract),
+            selectinload(BlockchainRecord.certificate)
+        )
+        .where(BlockchainRecord.id == anchor_id)
+    )
+    record = result.scalar_one_or_none()
+
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Anchor record not found"
+        )
+
+    if record.status != AnchorStatus.CONFIRMED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Certificate only available for confirmed anchors"
+        )
+
+    # Authorization check
+    if record.contract and record.contract.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to access this certificate"
+        )
+
+    # Generate certificate if not exists
+    if not record.certificate:
+        cert_number = await generate_certificate_number(db)
+        verification_url = f"https://trendy.storydot.kr/law/verify/{record.id}"
+
+        certificate = Certificate(
+            blockchain_record_id=record.id,
+            certificate_number=cert_number,
+            verification_url=verification_url
+        )
+        db.add(certificate)
+        await db.flush()
+        record.certificate = certificate
+
+    # Generate PDF
+    cert_service = get_certificate_service()
+    contract_title = record.contract.title if record.contract else "Untitled Contract"
+
+    pdf_bytes = await cert_service.generate_certificate_pdf(
+        certificate_number=record.certificate.certificate_number,
+        contract_title=contract_title,
+        document_hash=record.document_hash,
+        tx_hash=record.tx_hash or "pending",
+        block_number=record.block_number or 0,
+        network=record.network,
+        anchored_at=record.confirmed_at or datetime.utcnow(),
+        verification_url=record.certificate.verification_url,
+    )
+
+    if pdf_bytes:
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=SafeCon_Certificate_{record.certificate.certificate_number}.pdf"
+            }
+        )
+
+    # Fallback: Return HTML for printing
+    html = cert_service.generate_certificate_html(
+        certificate_number=record.certificate.certificate_number,
+        contract_title=contract_title,
+        document_hash=record.document_hash,
+        tx_hash=record.tx_hash or "pending",
+        block_number=record.block_number or 0,
+        network=record.network,
+        anchored_at=record.confirmed_at or datetime.utcnow(),
+        verification_url=record.certificate.verification_url,
+    )
+
+    return Response(
+        content=html,
+        media_type="text/html",
+        headers={
+            "Content-Disposition": f"inline; filename=SafeCon_Certificate_{record.certificate.certificate_number}.html"
+        }
     )
 
 

@@ -14,6 +14,9 @@ import { LegalQA } from './views/LegalQA';
 import { DocuSignSigning } from './views/DocuSignSigning';
 import { Login } from './views/Login';
 import { Register } from './views/Register';
+import { Verify } from './views/Verify';
+import { Billing } from './views/Billing';
+import { DeveloperPortal } from './views/DeveloperPortal';
 import { Contract, ViewState, ContractAnalysis, ContractStatus, UserProfile } from './types';
 import { MOCK_CONTRACTS, MOCK_ANALYSIS_RESULT, STANDARD_TEMPLATES } from './constants';
 import { ToastProvider } from './components/Toast';
@@ -143,8 +146,7 @@ const AppContent: React.FC = () => {
     switch (currentView) {
       case 'HOME':
         return (
-          <Home 
-            contracts={contracts} 
+          <Home
             onContractClick={handleContractClick}
             onNewCheck={() => handleNavigate('UPLOAD')}
             onTemplateClick={handleTemplateClick}
@@ -230,6 +232,8 @@ const AppContent: React.FC = () => {
                 onUpdateProfile={setUserProfile}
                 onBack={() => handleNavigate('HOME')}
                 onLogin={() => handleNavigate('LOGIN')}
+                onNavigateToBilling={() => handleNavigate('BILLING')}
+                onNavigateToDevPortal={() => handleNavigate('DEVELOPER_PORTAL')}
             />
         );
       case 'LEGAL_SERVICES':
@@ -275,6 +279,20 @@ const AppContent: React.FC = () => {
                 onSuccess={() => handleNavigate('HOME')}
               />
           );
+      case 'VERIFY':
+          const urlParams = new URLSearchParams(window.location.search);
+          const hashParam = urlParams.get('hash');
+          return (
+              <Verify initialHash={hashParam || undefined} />
+          );
+      case 'BILLING':
+          return (
+              <Billing onBack={() => handleNavigate('PROFILE')} />
+          );
+      case 'DEVELOPER_PORTAL':
+          return (
+              <DeveloperPortal onBack={() => handleNavigate('PROFILE')} />
+          );
       default:
         return <div>Not Found</div>;
     }
@@ -298,7 +316,10 @@ const AppContent: React.FC = () => {
     'LEGAL_QA',
     'DOCUSIGN_SIGNING',
     'LOGIN',
-    'REGISTER'
+    'REGISTER',
+    'VERIFY',
+    'BILLING',
+    'DEVELOPER_PORTAL'
   ];
 
   if (fullScreenViews.includes(currentView)) {

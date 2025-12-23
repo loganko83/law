@@ -72,4 +72,7 @@ export type ViewState =
   | 'LEGAL_QA'
   | 'DOCUSIGN_SIGNING'
   | 'LOGIN'
-  | 'REGISTER';
+  | 'REGISTER'
+  | 'VERIFY'
+  | 'BILLING'
+  | 'DEVELOPER_PORTAL';

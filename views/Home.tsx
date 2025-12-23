@@ -1,24 +1,70 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
-import { Bell, ChevronRight, AlertTriangle, CheckCircle2, Clock, Plus, Briefcase, Building, FileText, ScrollText, X, ExternalLink, Scale, Handshake, Coins, TrendingUp, FileSignature } from 'lucide-react';
+import { Bell, ChevronRight, AlertTriangle, CheckCircle2, Clock, Plus, Briefcase, Building, FileText, ScrollText, X, ExternalLink, Scale, Handshake, Coins, TrendingUp, FileSignature, Loader2 } from 'lucide-react';
 import { Contract, ContractStatus } from '../types';
 import { AnimatePresence, motion } from 'framer-motion';
+import { contractsApi, Contract as ApiContract } from '../services/api';
 
 interface HomeProps {
-  contracts: Contract[];
   onContractClick: (contract: Contract) => void;
   onNewCheck: () => void;
   onTemplateClick?: (templateId: string) => void;
 }
 
-export const Home: React.FC<HomeProps> = ({ contracts, onContractClick, onNewCheck, onTemplateClick }) => {
+export const Home: React.FC<HomeProps> = ({ onContractClick, onNewCheck, onTemplateClick }) => {
   const { t } = useTranslation();
   const [filterType, setFilterType] = useState('all');
   const [templateCategory, setTemplateCategory] = useState('all');
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchContracts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const apiContracts = await contractsApi.list();
+
+        const mappedContracts: Contract[] = apiContracts.map((apiContract: ApiContract) => ({
+          id: apiContract.id,
+          title: apiContract.title,
+          type: apiContract.contract_type || 'Service',
+          date: new Date(apiContract.created_at).toLocaleDateString('ko-KR'),
+          status: mapApiStatusToContractStatus(apiContract.status),
+          partyName: apiContract.description || t('contract.unknownParty'),
+        }));
+
+        setContracts(mappedContracts);
+      } catch (err) {
+        console.error('Failed to fetch contracts:', err);
+        setError(err instanceof Error ? err.message : t('errors.fetchFailed'));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContracts();
+  }, [t]);
+
+  const mapApiStatusToContractStatus = (apiStatus: string): ContractStatus => {
+    switch (apiStatus) {
+      case 'draft':
+        return ContractStatus.Reviewing;
+      case 'active':
+        return ContractStatus.Active;
+      case 'expired':
+      case 'terminated':
+        return ContractStatus.Completed;
+      default:
+        return ContractStatus.Reviewing;
+    }
+  };
 
   const activeContracts = contracts.filter(c => c.status !== ContractStatus.Completed);
 
@@ -179,7 +225,17 @@ export const Home: React.FC<HomeProps> = ({ contracts, onContractClick, onNewChe
         </div>
 
         <div className="space-y-3">
-          {filteredContracts.length === 0 ? (
+          {loading ? (
+            <div className="flex justify-center py-10 bg-white rounded-2xl border border-dashed border-slate-300">
+              <Loader2 size={32} className="text-blue-600 animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-red-200">
+              <AlertTriangle size={32} className="text-red-500 mx-auto mb-2" />
+              <p className="text-red-600 text-sm font-semibold">{t('errors.loadFailed')}</p>
+              <p className="text-slate-400 text-xs mt-1">{error}</p>
+            </div>
+          ) : filteredContracts.length === 0 ? (
             <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-slate-300">
               <p className="text-slate-400 text-sm">{t('home.noContracts')}</p>
             </div>

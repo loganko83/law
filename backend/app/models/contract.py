@@ -111,6 +111,10 @@ class ContractParty(Base):
     email = Column(String(255), nullable=True)
     phone = Column(String(20), nullable=True)
 
+    # Signing order (for sequential signing)
+    signing_order = Column(Integer, nullable=True, default=0)
+    can_sign = Column(Boolean, default=True)  # False if waiting for previous party
+
     # Signature
     signed_at = Column(DateTime, nullable=True)
     signature_data = Column(Text, nullable=True)  # Base64 encoded signature
