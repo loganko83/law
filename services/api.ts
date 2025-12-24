@@ -203,6 +203,14 @@ export const authApi = {
 
 // ==================== Contracts API ====================
 
+// Paginated response type
+interface PaginatedContracts {
+  contracts: Contract[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 export const contractsApi = {
   async list(params?: {
     status?: string;
@@ -215,7 +223,8 @@ export const contractsApi = {
     if (params?.limit) searchParams.set("limit", String(params.limit));
 
     const query = searchParams.toString();
-    return request<Contract[]>(`/contracts${query ? `?${query}` : ""}`);
+    const response = await request<PaginatedContracts>(`/contracts${query ? `?${query}` : ""}`);
+    return response.contracts;
   },
 
   async get(id: string): Promise<Contract> {
