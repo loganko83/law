@@ -387,9 +387,9 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
             </div>
 
             <label className="w-full mt-4 cursor-pointer">
-                 <input 
-                    type="file" 
-                    accept="image/*,.pdf" 
+                 <input
+                    type="file"
+                    accept="image/*,.pdf,.txt,text/plain,.doc,.docx"
                     onChange={handleFileChange}
                     className="hidden"
                   />
