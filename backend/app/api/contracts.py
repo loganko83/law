@@ -254,6 +254,20 @@ async def upload_document(
     for doc in existing_docs:
         doc.is_latest = False
 
+    # Extract text for text files immediately
+    ocr_text = None
+    ocr_status = "pending"
+    if file_ext == "txt":
+        try:
+            ocr_text = content.decode("utf-8")
+            ocr_status = "completed"
+        except UnicodeDecodeError:
+            try:
+                ocr_text = content.decode("cp949")
+                ocr_status = "completed"
+            except UnicodeDecodeError:
+                ocr_status = "failed"
+
     # Create document record
     document = ContractDocument(
         contract_id=contract_id,
@@ -264,7 +278,8 @@ async def upload_document(
         content_hash=content_hash,
         version=version,
         is_latest=True,
-        ocr_status="pending"
+        ocr_text=ocr_text,
+        ocr_status=ocr_status
     )
     db.add(document)
     await db.flush()

@@ -180,22 +180,37 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
 
       // Step 4: Trigger analysis via API
       setAnalysisProgress(t('upload.aiAnalyzing'));
-      const apiAnalysis = await analysisApi.analyze(contract.id);
+      const analysisStart = await analysisApi.analyze(contract.id);
 
-      // Step 5: Convert API response to ContractAnalysis type
+      // Step 5: Poll for analysis completion
+      let analysisResult = await analysisApi.getAnalysis(analysisStart.analysis_id);
+      let pollCount = 0;
+      const maxPolls = 30;
+
+      while (analysisResult.status !== 'completed' && analysisResult.status !== 'failed' && pollCount < maxPolls) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        analysisResult = await analysisApi.getAnalysis(analysisStart.analysis_id);
+        pollCount++;
+      }
+
+      if (analysisResult.status === 'failed') {
+        throw new Error(t('upload.analysisError', 'Analysis failed. Please try again.'));
+      }
+
+      // Step 6: Convert API response to ContractAnalysis type
       const analysis: ContractAnalysis = {
-        summary: apiAnalysis.summary,
-        score: apiAnalysis.safety_score,
-        risks: apiAnalysis.risks.map((risk, index) => ({
+        summary: analysisResult.summary || '',
+        score: analysisResult.safety_score || 0,
+        risks: (analysisResult.risks || []).map((risk, index) => ({
           id: `risk-${index}`,
-          title: risk.type,
-          description: risk.description,
-          level: risk.severity.toUpperCase() as 'HIGH' | 'MEDIUM' | 'LOW',
+          title: risk.type || '',
+          description: risk.description || '',
+          level: (risk.severity?.toUpperCase() || 'MEDIUM') as 'HIGH' | 'MEDIUM' | 'LOW',
         })),
-        questions: apiAnalysis.questions,
+        questions: analysisResult.questions || [],
       };
 
-      // Step 6: Return results
+      // Step 7: Return results
       setAnalysisProgress(t('upload.complete'));
       onAnalyze(analysis, contractText);
 

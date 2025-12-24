@@ -478,22 +478,14 @@ export const blockchainApi = {
 
 export const analysisApi = {
   async analyze(contractId: string): Promise<{
-    id: string;
-    contract_id: string;
-    summary: string;
-    safety_score: number;
-    risks: Array<{
-      type: string;
-      severity: string;
-      description: string;
-      clause: string | null;
-      suggestion: string | null;
-    }>;
-    questions: string[];
+    analysis_id: string;
     status: string;
+    message: string;
+    websocket_channel: string;
   }> {
-    return request(`/analysis/contracts/${contractId}`, {
+    return request("/ai/analyze", {
       method: "POST",
+      body: JSON.stringify({ contract_id: contractId }),
     });
   },
 
@@ -511,7 +503,7 @@ export const analysisApi = {
     status: string;
     created_at: string;
   }> {
-    return request(`/analysis/${analysisId}`);
+    return request(`/ai/analysis/${analysisId}`);
   },
 
   async getContractAnalyses(contractId: string): Promise<
@@ -522,7 +514,7 @@ export const analysisApi = {
       created_at: string;
     }>
   > {
-    return request(`/analysis/contracts/${contractId}`);
+    return request(`/ai/contract/${contractId}/analyses`);
   },
 };
 
