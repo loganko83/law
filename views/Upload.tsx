@@ -362,10 +362,10 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
                     className="absolute inset-0 w-full h-full object-cover"
                 />
             ) : (
-                <img 
-                    src={capturedImage} 
-                    alt="Captured" 
-                    className="absolute inset-0 w-full h-full object-contain bg-black" 
+                <img
+                    src={capturedImage}
+                    alt={t('upload.capturedContractImage', 'Captured contract document for analysis')}
+                    className="absolute inset-0 w-full h-full object-contain bg-black"
                 />
             )}
             
@@ -449,10 +449,16 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
                     accept="image/*,.pdf,.txt,text/plain,.doc,.docx"
                     onChange={handleFileChange}
                     className="hidden"
+                    aria-label={t('upload.uploadFile')}
                   />
-                  <div className="w-full py-4 rounded-xl border border-slate-200 text-slate-600 font-semibold flex items-center justify-center gap-2 hover:bg-white hover:shadow-sm transition-all">
-                    <UploadIcon size={20} />
-                    {t('upload.uploadFile')}
+                  <div className="w-full py-4 rounded-xl border border-slate-200 text-slate-600 font-semibold flex flex-col items-center justify-center gap-1 hover:bg-white hover:shadow-sm transition-all">
+                    <div className="flex items-center gap-2">
+                      <UploadIcon size={20} />
+                      {t('upload.uploadFile')}
+                    </div>
+                    <span className="text-xs text-slate-400 font-normal">
+                      {t('upload.maxFileSize', 'PDF, Images, TXT (Max 50MB)')}
+                    </span>
                   </div>
             </label>
             

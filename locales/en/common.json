@@ -19,7 +19,8 @@
     "templates": "Contract Templates",
     "viewAll": "View All",
     "legalOrgs": "Legal Resources",
-    "noContracts": "No contracts found."
+    "noContracts": "No contracts found.",
+    "noContractsDesc": "Upload a contract to get started"
   },
   "filters": {
     "all": "All",

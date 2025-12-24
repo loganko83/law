@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
-import { Bell, ChevronRight, AlertTriangle, CheckCircle2, Clock, Plus, Briefcase, Building, FileText, ScrollText, X, ExternalLink, Scale, Handshake, Coins, TrendingUp, FileSignature, Loader2 } from 'lucide-react';
+import { Bell, ChevronRight, AlertTriangle, CheckCircle2, Clock, Plus, Briefcase, Building, FileText, ScrollText, X, ExternalLink, Scale, Handshake, Coins, TrendingUp, FileSignature, FileQuestion } from 'lucide-react';
+import { ListSkeleton } from '../components/Skeleton';
 import { Contract, ContractStatus } from '../types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { contractsApi, Contract as ApiContract } from '../services/api';
@@ -226,9 +227,7 @@ export const Home: React.FC<HomeProps> = ({ onContractClick, onNewCheck, onTempl
 
         <div className="space-y-3">
           {loading ? (
-            <div className="flex justify-center py-10 bg-white rounded-2xl border border-dashed border-slate-300">
-              <Loader2 size={32} className="text-blue-600 animate-spin" />
-            </div>
+            <ListSkeleton count={3} />
           ) : error ? (
             <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-red-200">
               <AlertTriangle size={32} className="text-red-500 mx-auto mb-2" />
@@ -236,8 +235,10 @@ export const Home: React.FC<HomeProps> = ({ onContractClick, onNewCheck, onTempl
               <p className="text-slate-400 text-xs mt-1">{error}</p>
             </div>
           ) : filteredContracts.length === 0 ? (
-            <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-slate-300">
-              <p className="text-slate-400 text-sm">{t('home.noContracts')}</p>
+            <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-slate-300 flex flex-col items-center">
+              <FileQuestion size={48} className="text-slate-300 mb-3" />
+              <p className="text-slate-500 text-sm font-medium">{t('home.noContracts')}</p>
+              <p className="text-slate-400 text-xs mt-1">{t('home.noContractsDesc', 'Upload a contract to get started')}</p>
             </div>
           ) : (
             filteredContracts.map(contract => (

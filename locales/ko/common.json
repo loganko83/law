@@ -19,7 +19,8 @@
     "templates": "계약서 템플릿",
     "viewAll": "전체보기",
     "legalOrgs": "주요 법률 기관",
-    "noContracts": "계약이 없습니다."
+    "noContracts": "계약이 없습니다.",
+    "noContractsDesc": "새 계약서를 업로드해서 시작하세요"
   },
   "filters": {
     "all": "전체",
@@ -66,6 +67,8 @@
     "retake": "재촬영",
     "use": "사용하기",
     "cameraError": "카메라에 접근할 수 없습니다. 권한을 확인해주세요.",
+    "capturedContractImage": "분석을 위해 촬영된 계약서 이미지",
+    "maxFileSize": "PDF, 이미지, TXT (최대 50MB)",
     "processingPdf": "PDF 처리 중...",
     "processingImage": "이미지 처리 중...",
     "extractionError": "문서에서 충분한 텍스트를 추출할 수 없습니다. 다른 파일 형식을 시도해주세요.",
