@@ -6,7 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ContractAnalysis, UserProfile } from '../types';
 import { analyzeContract } from '../services/contractAnalysis';
 import { useToast } from '../components/Toast';
-import { contractsApi, analysisApi } from '../services/api';
+import { contractsApi, analysisApi, ApiError } from '../services/api';
+import { extractPdfText, isPdfFile } from '../services/pdfExtractor';
+import { extractImageText, isImageFile } from '../services/ocrService';
 
 interface UploadProps {
   onAnalyze: (analysis: ContractAnalysis, contractText: string) => void;
@@ -138,25 +140,35 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
       if (file.type.startsWith('text/') || file.name.endsWith('.txt')) {
         // Plain text file
         contractText = await file.text();
-      } else if (file.type === 'application/pdf') {
-        // For PDF, we'll use a simplified text extraction
-        // In production, use pdf.js or server-side extraction
+      } else if (isPdfFile(file)) {
+        // PDF extraction using pdf.js
         setAnalysisProgress(t('upload.processingPdf', 'Processing PDF...'));
-        // Placeholder: read as text for demo
-        contractText = await file.text().catch(() => '');
-        if (!contractText) {
-          // If PDF text extraction fails, use demo text
-          contractText = `This is a placeholder for PDF content from: ${file.name}.
-          In production, this would be extracted using pdf.js or OCR.
-          For testing, please upload a .txt file with contract text.`;
+        const pdfResult = await extractPdfText(file);
+        if (pdfResult.success) {
+          contractText = pdfResult.text;
+        } else {
+          // PDF might be scanned - try backend OCR
+          console.warn('PDF text extraction failed, will rely on backend OCR:', pdfResult.error);
+          contractText = ''; // Backend will handle OCR
         }
-      } else if (file.type.startsWith('image/')) {
-        // For images, we would use OCR
-        setAnalysisProgress(t('upload.processingImage', 'Processing image...'));
-        // Placeholder for OCR
-        contractText = `Image contract from: ${file.name}.
-        In production, this would be processed with Tesseract.js OCR.
-        For testing, please upload a .txt file with contract text.`;
+      } else if (isImageFile(file)) {
+        // Image OCR using Tesseract.js
+        setAnalysisProgress(t('upload.processingImage', 'Processing image with OCR...'));
+        const ocrResult = await extractImageText(file, (progress) => {
+          setAnalysisProgress(`${t('upload.processingImage', 'Processing image...')} ${Math.round(progress.progress * 100)}%`);
+        });
+        if (ocrResult.success) {
+          contractText = ocrResult.text;
+          if (ocrResult.confidence < 70) {
+            toast.warning(t('upload.lowOcrConfidence', 'OCR confidence is low. Please verify the extracted text.'));
+          }
+        } else {
+          throw new Error(ocrResult.error || t('upload.ocrError', 'Failed to extract text from image.'));
+        }
+      } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+        // Word documents - rely on backend processing
+        setAnalysisProgress(t('upload.processingDoc', 'Processing document...'));
+        contractText = ''; // Backend will handle extraction
       } else {
         // Try to read as text
         contractText = await file.text().catch(() => '');
@@ -217,36 +229,66 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
     } catch (err) {
       console.error('Analysis failed:', err);
 
-      // Handle API errors gracefully with fallback to local analysis
-      if (err instanceof Error && err.message.includes('fetch')) {
-        // Network error - fallback to local analysis
-        try {
-          setAnalysisProgress(t('upload.aiAnalyzing'));
-          let userContext = '';
-          if (userProfile) {
-            userContext = `User is a ${userProfile.businessType}.
-            Business: ${userProfile.businessDescription}
-            Known concerns: ${userProfile.legalConcerns}`;
-          }
+      // Determine appropriate error message
+      let errorMessage = t('upload.analysisError', 'Analysis failed. Please try again.');
 
-          // Extract contract text if not already done
-          let contractText = '';
-          if (file.type.startsWith('text/') || file.name.endsWith('.txt')) {
-            contractText = await file.text();
-          } else {
-            contractText = await file.text().catch(() => '');
-          }
+      if (err instanceof ApiError) {
+        // Handle specific API errors
+        if (err.status === 429) {
+          errorMessage = t('errors.rateLimited', 'Too many requests. Please wait a moment and try again.');
+        } else if (err.status === 413) {
+          errorMessage = t('errors.fileTooLarge', 'File is too large. Maximum size is 10MB.');
+        } else if (err.status === 400) {
+          errorMessage = err.message || t('errors.invalidRequest', 'Invalid request. Please check the file format.');
+        } else if (err.status === 401 || err.status === 403) {
+          errorMessage = t('errors.authRequired', 'Please log in to analyze contracts.');
+        } else if (err.status >= 500) {
+          errorMessage = t('errors.serverError', 'Server error. Please try again later.');
+        }
+      } else if (err instanceof Error) {
+        if (err.message.includes('fetch') || err.message.includes('network') || err.message.includes('Failed to fetch')) {
+          // Network error - try fallback to local analysis
+          try {
+            setAnalysisProgress(t('upload.fallbackAnalysis', 'Using local analysis...'));
+            let userContext = '';
+            if (userProfile) {
+              userContext = `User is a ${userProfile.businessType}.
+              Business: ${userProfile.businessDescription}
+              Known concerns: ${userProfile.legalConcerns}`;
+            }
 
-          const analysis = await analyzeContract(contractText, userContext, false);
-          setAnalysisProgress(t('upload.complete'));
-          onAnalyze(analysis, contractText);
-          return;
-        } catch (fallbackErr) {
-          console.error('Fallback analysis failed:', fallbackErr);
+            // Re-extract text for local analysis
+            let localContractText = '';
+            if (file.type.startsWith('text/') || file.name.endsWith('.txt')) {
+              localContractText = await file.text();
+            } else if (isPdfFile(file)) {
+              const pdfResult = await extractPdfText(file);
+              localContractText = pdfResult.success ? pdfResult.text : '';
+            } else if (isImageFile(file)) {
+              const ocrResult = await extractImageText(file);
+              localContractText = ocrResult.success ? ocrResult.text : '';
+            }
+
+            if (localContractText && localContractText.length >= 50) {
+              const analysis = await analyzeContract(localContractText, userContext, false);
+              setAnalysisProgress(t('upload.complete'));
+              onAnalyze(analysis, localContractText);
+              toast.info(t('upload.offlineMode', 'Analyzed using local processing (offline mode).'));
+              return;
+            }
+          } catch (fallbackErr) {
+            console.error('Fallback analysis failed:', fallbackErr);
+          }
+          errorMessage = t('errors.networkError', 'Network error. Please check your internet connection.');
+        } else if (err.message.includes('OCR') || err.message.includes('extract')) {
+          errorMessage = err.message;
+        } else {
+          errorMessage = err.message;
         }
       }
 
-      setError(err instanceof Error ? err.message : t('upload.analysisError', 'Analysis failed. Please try again.'));
+      setError(errorMessage);
+      toast.error(errorMessage);
       setIsScanning(false);
     }
   };

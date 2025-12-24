@@ -21,6 +21,7 @@ from app.schemas.contract import (
 )
 from app.api.auth import get_current_user
 from app.core.config import settings
+from app.core.file_validator import validate_uploaded_file
 
 router = APIRouter(prefix="/contracts", tags=["Contracts"])
 
@@ -212,23 +213,25 @@ async def upload_document(
             detail="Contract not found"
         )
 
-    # Validate file
-    file_ext = file.filename.split(".")[-1].lower() if file.filename else ""
-    if file_ext not in settings.ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File type not allowed. Allowed: {settings.ALLOWED_EXTENSIONS}"
-        )
-
     # Read file content
     content = await file.read()
-    file_size = len(content)
 
-    if file_size > settings.MAX_FILE_SIZE:
+    # Comprehensive file validation (extension, size, and magic bytes)
+    is_valid, error_message = validate_uploaded_file(
+        content=content,
+        filename=file.filename or "unknown",
+        allowed_extensions=settings.ALLOWED_EXTENSIONS,
+        max_size_bytes=settings.MAX_FILE_SIZE
+    )
+
+    if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File too large. Max size: {settings.MAX_FILE_SIZE / 1024 / 1024}MB"
+            detail=error_message
         )
+
+    file_ext = file.filename.split(".")[-1].lower() if file.filename else ""
+    file_size = len(content)
 
     # Calculate hash
     content_hash = hashlib.sha256(content).hexdigest()

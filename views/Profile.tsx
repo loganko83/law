@@ -29,8 +29,9 @@ const HISTORY_CONTRACTS: Partial<Contract>[] = [
 export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, onBack, onLogin, onNavigateToBilling, onNavigateToDevPortal }) => {
   const { t } = useTranslation();
   const { resolvedTheme } = useTheme();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, updateProfile } = useAuth();
   const { addToast } = useToast();
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -138,9 +139,39 @@ export const Profile: React.FC<ProfileProps> = ({ userProfile, onUpdateProfile, 
     return `${address.slice(0, 10)}...${address.slice(-8)}`;
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
+    if (!isAuthenticated) {
+      // Not logged in, just update local state
       onUpdateProfile(editForm);
       setEditProfileOpen(false);
+      return;
+    }
+
+    setIsSavingProfile(true);
+    try {
+      // Save to backend
+      await updateProfile({
+        business_type: editForm.businessType,
+        business_description: editForm.businessDescription,
+        legal_concerns: editForm.legalConcerns,
+      });
+
+      // Update local state
+      onUpdateProfile(editForm);
+      setEditProfileOpen(false);
+      addToast({
+        message: t('profile.saveSuccess', 'Profile saved successfully'),
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      addToast({
+        message: t('profile.saveError', 'Failed to save profile. Please try again.'),
+        type: 'error'
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const handleAddCard = () => {

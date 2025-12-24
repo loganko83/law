@@ -604,3 +604,154 @@ SIGN-001..012 ─► MULTI-*
 CTR-004 ─► VER-*
 CTR-001 ─► SHARE-*
 ```
+
+---
+
+## Phase 5: Production Readiness (NEW - 2025-12-24)
+
+### Sprint 5.1: CRITICAL Fixes (2-3 days)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| PROD-001 | Implement PDF text extraction with pdf.js | P0 | M | [ ] | - |
+| PROD-002 | Implement image OCR with Tesseract.js | P0 | M | PROD-001 |
+| PROD-003 | Enforce JWT secret from environment variable | P0 | S | [ ] | - |
+| PROD-004 | Complete error handling in Upload.tsx | P0 | S | [ ] | - |
+| PROD-005 | Add ErrorBoundary component for React errors | P0 | S | [ ] | - |
+| PROD-006 | Add Korean error messages to i18n | P0 | S | PROD-004 |
+
+**Files to Create**:
+```
+services/pdfExtractor.ts
+services/ocrService.ts
+components/ErrorBoundary.tsx
+```
+
+**Files to Modify**:
+```
+views/Upload.tsx
+backend/app/core/config.py
+backend/app/main.py
+locales/ko/common.json
+locales/en/common.json
+package.json
+```
+
+---
+
+### Sprint 5.2: HIGH Priority Fixes (2-3 days)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| PROD-007 | Add user profile update endpoint (business_type, etc) | P1 | M | [ ] | - |
+| PROD-008 | Connect Profile.tsx to profile update API | P1 | S | PROD-007 |
+| PROD-009 | Use persisted profile in AI analysis context | P1 | S | PROD-008 |
+| PROD-010 | Add file magic byte validation | P1 | M | [ ] | - |
+| PROD-011 | Create service worker (sw.js) | P1 | M | [ ] | - |
+| PROD-012 | Create offline fallback page | P1 | S | PROD-011 |
+| PROD-013 | Move refresh token to httpOnly cookie | P1 | L | [ ] | - |
+| PROD-014 | Implement silent token refresh | P1 | M | PROD-013 |
+
+**Files to Create**:
+```
+public/sw.js
+public/offline.html
+backend/app/core/file_validator.py
+```
+
+**Files to Modify**:
+```
+backend/app/api/auth.py
+backend/app/schemas/user.py
+backend/app/api/contracts.py
+services/api.ts
+contexts/AuthContext.tsx
+views/Profile.tsx
+services/registerSW.ts
+```
+
+---
+
+### Sprint 5.3: MEDIUM Priority Fixes (3-4 days)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| PROD-015 | Add Korean text normalization (NFC) | P2 | S | [ ] | - |
+| PROD-016 | Expand risk pattern detection with variations | P2 | M | PROD-015 |
+| PROD-017 | Add few-shot examples to AI prompts | P2 | M | [ ] | - |
+| PROD-018 | Write tests for pdfExtractor.ts | P2 | S | PROD-001 |
+| PROD-019 | Write tests for ocrService.ts | P2 | S | PROD-002 |
+| PROD-020 | Write tests for contractAnalysis.ts | P2 | M | [ ] | - |
+| PROD-021 | Write backend test_analysis.py | P2 | M | [ ] | - |
+| PROD-022 | Write E2E upload flow test | P2 | M | PROD-001, PROD-002 |
+| PROD-023 | Add database transaction for analysis | P2 | S | [ ] | - |
+| PROD-024 | Persist RAG corpus ID to database | P2 | M | [ ] | - |
+| PROD-025 | Add RAG status indicator to UI | P2 | S | PROD-024 |
+
+**Files to Create**:
+```
+tests/unit/services/pdfExtractor.test.ts
+tests/unit/services/ocrService.test.ts
+tests/unit/services/contractAnalysis.test.ts
+backend/tests/test_analysis.py
+tests/e2e/upload-flow.spec.ts
+```
+
+**Files to Modify**:
+```
+services/contractAnalysis.ts
+backend/app/services/ai_analyzer.py
+backend/app/api/analysis.py
+services/geminiClient.ts
+```
+
+---
+
+### Sprint 5.4: Documentation & Deployment (1 day)
+
+| ID | Task | Priority | Effort | Status | Dependencies |
+|----|------|----------|--------|--------|--------------|
+| PROD-026 | Update CLAUDE.md with new services | P2 | S | PROD-001..025 |
+| PROD-027 | Update API documentation | P2 | S | PROD-007 |
+| PROD-028 | Add production deployment checklist | P2 | S | [ ] | - |
+
+---
+
+### Production Readiness Dependency Graph
+
+```
+PROD-001 (PDF) ─┬─► PROD-018 (Test)
+                └─► PROD-002 (OCR) ─► PROD-019 (Test)
+                                   └─► PROD-022 (E2E)
+
+PROD-003 (JWT) ─► PROD-013 (Cookie) ─► PROD-014 (Refresh)
+
+PROD-004 (Errors) ─┬─► PROD-005 (Boundary)
+                   └─► PROD-006 (i18n)
+
+PROD-007 (Profile API) ─► PROD-008 (UI) ─► PROD-009 (AI Context)
+
+PROD-011 (SW) ─► PROD-012 (Offline)
+
+PROD-015 (NFC) ─► PROD-016 (Patterns)
+
+PROD-024 (RAG DB) ─► PROD-025 (RAG UI)
+```
+
+---
+
+### Success Metrics
+
+| Metric | Target | Current |
+|--------|--------|---------|
+| PDF analysis success rate | >95% | 0% (placeholder) |
+| Image OCR accuracy | >90% | 0% (placeholder) |
+| Test coverage (critical paths) | >80% | ~20% |
+| Error handling coverage | 100% | ~60% |
+| Lighthouse PWA score | >90 | N/A |
+
+---
+
+*Last Updated: 2025-12-24*
+*Total New Tasks: 28*
+*Estimated Duration: 7-10 days*

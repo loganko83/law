@@ -1,6 +1,13 @@
 from pydantic_settings import BaseSettings
+from pydantic import Field, field_validator
 from typing import Optional
 import os
+import secrets
+
+
+def generate_default_secret() -> str:
+    """Generate a secure random secret for development only."""
+    return secrets.token_urlsafe(32)
 
 
 class Settings(BaseSettings):
@@ -8,6 +15,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "SafeCon API"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
+    ENVIRONMENT: str = "development"
 
     # Server
     HOST: str = "0.0.0.0"
@@ -20,11 +28,33 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
-    # JWT
-    JWT_SECRET_KEY: str = "your-super-secret-key-change-in-production"
+    # JWT - No default value, must be set in production
+    JWT_SECRET_KEY: str = Field(default_factory=generate_default_secret)
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    @field_validator('JWT_SECRET_KEY')
+    @classmethod
+    def validate_jwt_secret(cls, v: str, info) -> str:
+        """Ensure JWT secret is secure in production."""
+        # Check for insecure default values
+        insecure_defaults = [
+            "your-super-secret-key-change-in-production",
+            "secret",
+            "changeme",
+            "your-secret-key",
+        ]
+        if v.lower() in [d.lower() for d in insecure_defaults]:
+            raise ValueError(
+                "JWT_SECRET_KEY must be changed from the insecure default value. "
+                "Set a secure random string in your environment variables."
+            )
+        if len(v) < 32:
+            raise ValueError(
+                "JWT_SECRET_KEY must be at least 32 characters long for security."
+            )
+        return v
 
     # AI
     GEMINI_API_KEY: str = ""
@@ -47,7 +77,11 @@ class Settings(BaseSettings):
     OCR_PROVIDER: str = "tesseract"  # tesseract, google-vision, azure-ocr
 
     # CORS
-    CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:3000"]
+    CORS_ORIGINS: list = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://trendy.storydot.kr",
+    ]
 
     # DID BaaS
     DID_BAAS_URL: str = "https://trendy.storydot.kr/did-baas/api/v1"

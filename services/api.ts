@@ -194,7 +194,7 @@ export const authApi = {
   },
 
   async updateProfile(data: Partial<User>): Promise<User> {
-    return request<User>("/auth/profile", {
+    return request<User>("/auth/me", {
       method: "PATCH",
       body: JSON.stringify(data),
     });

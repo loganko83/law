@@ -1,14 +1,27 @@
 // SafeContract Service Worker
-const CACHE_NAME = 'safecon-v1';
-const STATIC_CACHE = 'safecon-static-v1';
-const DYNAMIC_CACHE = 'safecon-dynamic-v1';
+const CACHE_VERSION = 'v2';
+const STATIC_CACHE = `safecon-static-${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `safecon-dynamic-${CACHE_VERSION}`;
 
 // Static assets to cache on install
 const STATIC_ASSETS = [
   '/law/',
   '/law/index.html',
+  '/law/offline.html',
   '/law/manifest.json',
+  '/law/icons/icon-192.png',
+  '/law/icons/icon-512.png',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'
+];
+
+// API endpoints that should never be cached
+const API_PATTERNS = [
+  '/api/',
+  '/auth/',
+  '/contracts/',
+  '/analysis/',
+  '/ai/',
+  'generativelanguage.googleapis.com'
 ];
 
 // Install event - cache static assets
@@ -27,12 +40,14 @@ self.addEventListener('install', (event) => {
 // Activate event - clean old caches
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activating service worker...');
+  const currentCaches = [STATIC_CACHE, DYNAMIC_CACHE];
+
   event.waitUntil(
     caches.keys()
       .then((keys) => {
         return Promise.all(
           keys
-            .filter((key) => key !== STATIC_CACHE && key !== DYNAMIC_CACHE)
+            .filter((key) => key.startsWith('safecon-') && !currentCaches.includes(key))
             .map((key) => {
               console.log('[SW] Removing old cache:', key);
               return caches.delete(key);
@@ -42,6 +57,11 @@ self.addEventListener('activate', (event) => {
       .then(() => self.clients.claim())
   );
 });
+
+// Check if URL is an API request that should not be cached
+function isApiRequest(url) {
+  return API_PATTERNS.some(pattern => url.href.includes(pattern));
+}
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
@@ -53,16 +73,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip external API calls (Gemini)
-  if (url.hostname.includes('generativelanguage.googleapis.com')) {
-    return;
-  }
-
   // Skip chrome-extension and other non-http(s) requests
   if (!url.protocol.startsWith('http')) {
     return;
   }
 
+  // API requests - network only, no caching
+  if (isApiRequest(url)) {
+    event.respondWith(
+      fetch(request).catch(() => {
+        // Return offline error for API requests
+        return new Response(
+          JSON.stringify({ error: 'offline', message: 'You are currently offline' }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } }
+        );
+      })
+    );
+    return;
+  }
+
+  // Static assets - cache first with network fallback
   event.respondWith(
     caches.match(request)
       .then((cachedResponse) => {
@@ -76,10 +106,13 @@ self.addEventListener('fetch', (event) => {
         return fetchAndCache(request);
       })
       .catch(() => {
-        // Network failed and not in cache
-        if (request.headers.get('accept').includes('text/html')) {
-          return caches.match('/law/');
+        // Network failed and not in cache - show offline page for HTML requests
+        const acceptHeader = request.headers.get('accept') || '';
+        if (acceptHeader.includes('text/html')) {
+          return caches.match('/law/offline.html');
         }
+        // Return empty response for other assets
+        return new Response('', { status: 503 });
       })
   );
 });
