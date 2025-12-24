@@ -5,8 +5,6 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { AlertTriangle, HelpCircle, CheckCircle, Share2, Mail, FileText, ShieldAlert, ShieldCheck, Info, Download, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 import { useToast } from '../components/Toast';
 import { analysisApi } from '../services/api';
 
@@ -65,7 +63,7 @@ export const Report: React.FC<ReportProps> = ({ analysis: propAnalysis, analysis
   }, [propAnalysis, analysisId, toast, t]);
 
   const handleExportPDF = async () => {
-    if (!contentRef.current || isExporting) return;
+    if (!contentRef.current || isExporting || !analysis) return;
 
     setIsExporting(true);
     const originalScrollPos = window.scrollY;
@@ -73,6 +71,12 @@ export const Report: React.FC<ReportProps> = ({ analysis: propAnalysis, analysis
     try {
       window.scrollTo(0, 0);
       await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Lazy load PDF libraries
+      const [{ jsPDF }, { default: html2canvas }] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas'),
+      ]);
 
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();

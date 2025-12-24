@@ -528,17 +528,21 @@ export const DeveloperPortal: React.FC<DeveloperPortalProps> = ({ onBack }) => {
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => !createdKey && setShowCreateKeyModal(false)}
+              aria-hidden="true"
             />
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
               className="bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl relative z-10 max-h-[90vh] overflow-y-auto border border-slate-700"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="create-api-key-title"
             >
               {!createdKey ? (
                 <>
                   <div className="flex justify-between items-center mb-6">
-                    <h3 className="font-bold text-lg text-white">
+                    <h3 id="create-api-key-title" className="font-bold text-lg text-white">
                       {t('devPortal.createApiKey')}
                     </h3>
                     <button
@@ -687,15 +691,19 @@ export const DeveloperPortal: React.FC<DeveloperPortalProps> = ({ onBack }) => {
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setShowWebhookModal(false)}
+              aria-hidden="true"
             />
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
               className="bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-xl relative z-10 border border-slate-700"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="create-webhook-title"
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-lg text-white">
+                <h3 id="create-webhook-title" className="font-bold text-lg text-white">
                   {t('devPortal.createWebhook')}
                 </h3>
                 <button

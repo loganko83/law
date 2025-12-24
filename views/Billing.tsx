@@ -495,15 +495,19 @@ export const Billing: React.FC<BillingProps> = ({ onBack }) => {
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
               onClick={() => setShowUpgradeModal(false)}
+              aria-hidden="true"
             />
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
               className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl relative z-10"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="upgrade-modal-title"
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-lg text-slate-800">
+                <h3 id="upgrade-modal-title" className="font-bold text-lg text-slate-800">
                   {subscription ? t('billing.confirmUpgrade') : t('billing.confirmSubscribe')}
                 </h3>
                 <button
@@ -579,15 +583,20 @@ export const Billing: React.FC<BillingProps> = ({ onBack }) => {
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
               onClick={() => setShowCancelModal(false)}
+              aria-hidden="true"
             />
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
               className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl relative z-10"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="cancel-modal-title"
+              aria-describedby="cancel-modal-desc"
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-lg text-slate-800">
+                <h3 id="cancel-modal-title" className="font-bold text-lg text-slate-800">
                   {t('billing.confirmCancel')}
                 </h3>
                 <button
@@ -601,7 +610,7 @@ export const Billing: React.FC<BillingProps> = ({ onBack }) => {
               <div className="bg-red-50 p-4 rounded-lg mb-4 border border-red-100">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
-                  <div>
+                  <div id="cancel-modal-desc">
                     <p className="text-sm text-red-700 font-semibold mb-1">
                       {t('billing.cancelWarningTitle')}
                     </p>

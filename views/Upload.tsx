@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../components/Button';
-import { Camera, Upload as UploadIcon, FileText, X, ChevronLeft, ScanLine, AlertTriangle, RefreshCw, Check } from 'lucide-react';
+import { Camera, Upload as UploadIcon, FileText, X, ChevronLeft, ScanLine, AlertTriangle, RefreshCw, Check, Settings, CameraOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContractAnalysis, UserProfile } from '../types';
 import { analyzeContract } from '../services/contractAnalysis';
@@ -9,6 +9,7 @@ import { useToast } from '../components/Toast';
 import { contractsApi, analysisApi, ApiError } from '../services/api';
 import { extractPdfText, isPdfFile } from '../services/pdfExtractor';
 import { extractImageText, isImageFile } from '../services/ocrService';
+import { compressImage, shouldCompress, formatFileSize } from '../services/imageCompressor';
 
 interface UploadProps {
   onAnalyze: (analysis: ContractAnalysis, contractText: string) => void;
@@ -23,11 +24,13 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
   const [isScanning, setIsScanning] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  
+  const [estimatedTime, setEstimatedTime] = useState<string | null>(null);
+
   // Camera State
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState<{ type: string; message: string } | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -54,14 +57,36 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+      setCameraError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
       });
       setCameraStream(stream);
       setIsCameraOpen(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error accessing camera:", err);
-      toast.error(t('upload.cameraError', 'Cannot access camera. Please check permissions.'));
+
+      let errorType = 'unknown';
+      let errorMessage = t('upload.cameraError', 'Cannot access camera. Please check permissions.');
+
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errorType = 'permission';
+        errorMessage = t('upload.cameraPermissionDenied', 'Camera access was denied.');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        errorType = 'notFound';
+        errorMessage = t('upload.cameraNotFound', 'No camera found on this device.');
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        errorType = 'inUse';
+        errorMessage = t('upload.cameraInUse', 'Camera is being used by another application.');
+      } else if (err.name === 'OverconstrainedError') {
+        errorType = 'constraints';
+        errorMessage = t('upload.cameraConstraints', 'Camera does not support required settings.');
+      } else if (err.name === 'SecurityError') {
+        errorType = 'security';
+        errorMessage = t('upload.cameraSecurityError', 'Camera access blocked for security reasons. Please use HTTPS.');
+      }
+
+      setCameraError({ type: errorType, message: errorMessage });
     }
   };
 
@@ -130,11 +155,13 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
     if (!file) return;
     setIsScanning(true);
     setError(null);
+    setEstimatedTime(null);
     setAnalysisProgress(t('upload.processing'));
 
     try {
       // Step 1: Extract text from file (for fallback/local processing)
       setAnalysisProgress(t('upload.extractingText'));
+      setEstimatedTime(t('upload.estimatedTime', { seconds: '5-10', defaultValue: 'About 5-10 seconds' }));
       let contractText = '';
 
       if (file.type.startsWith('text/') || file.name.endsWith('.txt')) {
@@ -143,6 +170,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
       } else if (isPdfFile(file)) {
         // PDF extraction using pdf.js
         setAnalysisProgress(t('upload.processingPdf', 'Processing PDF...'));
+        setEstimatedTime(t('upload.estimatedTime', { seconds: '5-15', defaultValue: 'About 5-15 seconds' }));
         const pdfResult = await extractPdfText(file);
         if (pdfResult.success) {
           contractText = pdfResult.text;
@@ -154,6 +182,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
       } else if (isImageFile(file)) {
         // Image OCR using Tesseract.js
         setAnalysisProgress(t('upload.processingImage', 'Processing image with OCR...'));
+        setEstimatedTime(t('upload.estimatedTime', { seconds: '15-30', defaultValue: 'About 15-30 seconds' }));
         const ocrResult = await extractImageText(file, (progress) => {
           setAnalysisProgress(`${t('upload.processingImage', 'Processing image...')} ${Math.round(progress.progress * 100)}%`);
         });
@@ -168,6 +197,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
       } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
         // Word documents - rely on backend processing
         setAnalysisProgress(t('upload.processingDoc', 'Processing document...'));
+        setEstimatedTime(t('upload.estimatedTime', { seconds: '5-10', defaultValue: 'About 5-10 seconds' }));
         contractText = ''; // Backend will handle extraction
       } else {
         // Try to read as text
@@ -178,7 +208,29 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
         throw new Error(t('upload.extractionError', 'Could not extract sufficient text from the document. Please try a different file format.'));
       }
 
-      // Step 2: Create contract via API
+      // Step 2: Compress image if applicable
+      let uploadFile = file;
+      if (shouldCompress(file)) {
+        setAnalysisProgress(t('upload.compressingImage', 'Compressing image...'));
+        try {
+          const compressionResult = await compressImage(file);
+          if (compressionResult.compressionRatio > 1.2) {
+            uploadFile = compressionResult.file;
+            const savedSize = compressionResult.originalSize - compressionResult.compressedSize;
+            toast.info(
+              t('upload.compressionSuccess', {
+                saved: formatFileSize(savedSize),
+                ratio: compressionResult.compressionRatio.toFixed(1),
+                defaultValue: `Image compressed - saved ${formatFileSize(savedSize)} (${compressionResult.compressionRatio.toFixed(1)}x smaller)`,
+              })
+            );
+          }
+        } catch (compressError) {
+          console.warn('Image compression failed, using original:', compressError);
+        }
+      }
+
+      // Step 3: Create contract via API
       setAnalysisProgress(t('upload.creatingContract', 'Creating contract...'));
       const contract = await contractsApi.create({
         title: file.name,
@@ -186,15 +238,16 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
         contract_type: 'other',
       });
 
-      // Step 3: Upload document to contract
+      // Step 4: Upload document to contract
       setAnalysisProgress(t('upload.uploadingDocument', 'Uploading document...'));
-      await contractsApi.uploadDocument(contract.id, file);
+      await contractsApi.uploadDocument(contract.id, uploadFile);
 
-      // Step 4: Trigger analysis via API
+      // Step 5: Trigger analysis via API
       setAnalysisProgress(t('upload.aiAnalyzing'));
+      setEstimatedTime(t('upload.estimatedTime', { seconds: '30-60', defaultValue: 'About 30-60 seconds' }));
       const analysisStart = await analysisApi.analyze(contract.id);
 
-      // Step 5: Poll for analysis completion
+      // Step 6: Poll for analysis completion
       let analysisResult = await analysisApi.getAnalysis(analysisStart.analysis_id);
       let pollCount = 0;
       const maxPolls = 30;
@@ -209,7 +262,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
         throw new Error(t('upload.analysisError', 'Analysis failed. Please try again.'));
       }
 
-      // Step 6: Convert API response to ContractAnalysis type
+      // Step 7: Convert API response to ContractAnalysis type
       const analysis: ContractAnalysis = {
         summary: analysisResult.summary || '',
         score: analysisResult.safety_score || 0,
@@ -222,7 +275,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
         questions: analysisResult.questions || [],
       };
 
-      // Step 7: Return results
+      // Step 8: Return results
       setAnalysisProgress(t('upload.complete'));
       onAnalyze(analysis, contractText);
 
@@ -322,6 +375,12 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
         <p className="text-slate-400 text-center z-10 max-w-xs">
           {analysisProgress || t('upload.analyzingDescription')}
         </p>
+        {estimatedTime && (
+          <p className="text-blue-400/70 text-sm text-center z-10 mt-2 flex items-center gap-1.5">
+            <span className="inline-block w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></span>
+            {estimatedTime}
+          </p>
+        )}
 
         {error && (
           <div className="mt-4 bg-red-500/20 border border-red-500/50 rounded-xl p-4 z-10 max-w-sm">
@@ -494,6 +553,84 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
           </div>
         )}
       </div>
+
+      {/* Camera Error Modal */}
+      <AnimatePresence>
+        {cameraError && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setCameraError(null)}
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl relative z-10"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="camera-error-title"
+              aria-describedby="camera-error-desc"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <CameraOff size={32} className="text-red-500" />
+                </div>
+                <h3 id="camera-error-title" className="font-bold text-lg text-slate-800 mb-2">
+                  {t('upload.cameraErrorTitle', 'Camera Access Issue')}
+                </h3>
+                <p id="camera-error-desc" className="text-sm text-slate-600 mb-4">
+                  {cameraError.message}
+                </p>
+
+                {cameraError.type === 'permission' && (
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4 text-left w-full">
+                    <p className="text-xs font-bold text-blue-800 mb-2">
+                      {t('upload.cameraPermissionGuide', 'How to enable camera access:')}
+                    </p>
+                    <ol className="text-xs text-blue-700 space-y-1 list-decimal list-inside">
+                      <li>{t('upload.cameraStep1', 'Tap the lock icon in your browser address bar')}</li>
+                      <li>{t('upload.cameraStep2', 'Find "Camera" in the permissions list')}</li>
+                      <li>{t('upload.cameraStep3', 'Change the setting to "Allow"')}</li>
+                      <li>{t('upload.cameraStep4', 'Refresh this page and try again')}</li>
+                    </ol>
+                  </div>
+                )}
+
+                {cameraError.type === 'inUse' && (
+                  <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 mb-4 text-left w-full">
+                    <p className="text-xs text-orange-700">
+                      {t('upload.cameraInUseGuide', 'Please close other apps using the camera (video calls, camera app) and try again.')}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex gap-2 w-full">
+                  <button
+                    onClick={() => setCameraError(null)}
+                    className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 font-semibold text-sm hover:bg-slate-200 transition-colors"
+                  >
+                    {t('common.close', 'Close')}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCameraError(null);
+                      startCamera();
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw size={16} />
+                    {t('upload.tryAgain', 'Try Again')}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

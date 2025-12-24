@@ -67,8 +67,23 @@
     "retake": "Retake",
     "use": "Use This",
     "cameraError": "Cannot access camera. Please check permissions.",
+    "cameraErrorTitle": "Camera Access Issue",
+    "cameraPermissionDenied": "Camera access was denied.",
+    "cameraNotFound": "No camera found on this device.",
+    "cameraInUse": "Camera is being used by another application.",
+    "cameraConstraints": "Camera does not support required settings.",
+    "cameraSecurityError": "Camera access blocked for security reasons. Please use HTTPS.",
+    "cameraPermissionGuide": "How to enable camera access:",
+    "cameraStep1": "Tap the lock icon in your browser address bar",
+    "cameraStep2": "Find 'Camera' in the permissions list",
+    "cameraStep3": "Change the setting to 'Allow'",
+    "cameraStep4": "Refresh this page and try again",
+    "cameraInUseGuide": "Please close other apps using the camera (video calls, camera app) and try again.",
     "processingPdf": "Processing PDF...",
     "processingImage": "Processing image...",
+    "compressingImage": "Compressing image...",
+    "compressionSuccess": "Image compressed - saved {{saved}} ({{ratio}}x smaller)",
+    "estimatedTime": "About {{seconds}} seconds",
     "extractionError": "Could not extract sufficient text from the document. Please try a different file format.",
     "analysisError": "Analysis failed. Please try again."
   },
@@ -466,6 +481,13 @@
     "aiAnalysisCompleted": "AI Analysis Completed",
     "signatureComplete": "E-Signature Complete (DocuSign)",
     "contractDraftCreated": "Contract Draft Created"
+  },
+  "offline": {
+    "youAreOffline": "You are offline",
+    "backOnline": "Back online",
+    "pendingCount": "{{count}} pending",
+    "syncFailed": "{{count}} action(s) failed to sync",
+    "retry": "Retry"
   },
   "errors": {
     "fetchFailed": "Failed to fetch data.",
