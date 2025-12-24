@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     # File Storage - Local
     UPLOAD_DIR: str = "./uploads"
     MAX_FILE_SIZE: int = 50 * 1024 * 1024  # 50MB
-    ALLOWED_EXTENSIONS: list = ["pdf", "docx", "doc", "jpg", "jpeg", "png"]
+    ALLOWED_EXTENSIONS: list = ["pdf", "docx", "doc", "jpg", "jpeg", "png", "txt"]
 
     # S3/MinIO Storage
     S3_ENABLED: bool = False
