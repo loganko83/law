@@ -171,7 +171,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
       const contract = await contractsApi.create({
         title: file.name,
         description: `Contract uploaded from ${file.name}`,
-        contract_type: 'uploaded',
+        contract_type: 'other',
       });
 
       // Step 3: Upload document to contract
