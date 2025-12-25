@@ -2,14 +2,14 @@
  * ContractDetail shared types
  */
 
-import { Contract, ContractStatus } from '../../types';
+import { Contract, ContractStatus, ContractAnalysis } from '../../types';
 import { BlockchainAnchor, ContractParty, ShareLink, DocumentVersion } from '../../services/api';
 
 export interface ContractDetailProps {
   contract: Contract;
   onBack: () => void;
   onViewDocument: () => void;
-  onViewReport?: (analysis: any) => void;
+  onViewReport?: (analysis: ContractAnalysis) => void;
   onStartSign?: () => void;
 }
 

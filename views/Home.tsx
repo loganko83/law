@@ -56,6 +56,8 @@ export const Home: React.FC<HomeProps> = ({ onContractClick, onNewCheck, onTempl
   const mapApiStatusToContractStatus = (apiStatus: string): ContractStatus => {
     switch (apiStatus) {
       case 'draft':
+        return ContractStatus.Draft;
+      case 'pending':
         return ContractStatus.Reviewing;
       case 'active':
         return ContractStatus.Active;

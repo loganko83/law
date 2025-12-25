@@ -3,13 +3,21 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../components/Button';
 import { Camera, Upload as UploadIcon, FileText, X, ChevronLeft, ScanLine, AlertTriangle, RefreshCw, Check, Settings, CameraOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ContractAnalysis, UserProfile } from '../types';
+import { ContractAnalysis, UserProfile, RiskLevel } from '../types';
 import { analyzeContract } from '../services/contractAnalysis';
 import { useToast } from '../components/Toast';
 import { contractsApi, analysisApi, ApiError } from '../services/api';
 import { extractPdfText, isPdfFile } from '../services/pdfExtractor';
 import { extractImageText, isImageFile } from '../services/ocrService';
 import { compressImage, shouldCompress, formatFileSize } from '../services/imageCompressor';
+
+// Helper to safely convert severity string to RiskLevel enum
+const mapSeverityToRiskLevel = (severity: string | undefined): RiskLevel => {
+  const upper = severity?.toUpperCase() || '';
+  if (upper === 'HIGH') return RiskLevel.High;
+  if (upper === 'MEDIUM') return RiskLevel.Medium;
+  return RiskLevel.Low;
+};
 
 interface UploadProps {
   onAnalyze: (analysis: ContractAnalysis, contractText: string) => void;
@@ -63,25 +71,28 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
       });
       setCameraStream(stream);
       setIsCameraOpen(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error accessing camera:", err);
 
       let errorType = 'unknown';
       let errorMessage = t('upload.cameraError', 'Cannot access camera. Please check permissions.');
 
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      // Type guard for DOMException-like errors
+      const errorName = err instanceof Error ? err.name : '';
+
+      if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
         errorType = 'permission';
         errorMessage = t('upload.cameraPermissionDenied', 'Camera access was denied.');
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+      } else if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
         errorType = 'notFound';
         errorMessage = t('upload.cameraNotFound', 'No camera found on this device.');
-      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+      } else if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
         errorType = 'inUse';
         errorMessage = t('upload.cameraInUse', 'Camera is being used by another application.');
-      } else if (err.name === 'OverconstrainedError') {
+      } else if (errorName === 'OverconstrainedError') {
         errorType = 'constraints';
         errorMessage = t('upload.cameraConstraints', 'Camera does not support required settings.');
-      } else if (err.name === 'SecurityError') {
+      } else if (errorName === 'SecurityError') {
         errorType = 'security';
         errorMessage = t('upload.cameraSecurityError', 'Camera access blocked for security reasons. Please use HTTPS.');
       }
@@ -270,7 +281,7 @@ export const Upload: React.FC<UploadProps> = ({ onAnalyze, onCancel, userProfile
           id: `risk-${index}`,
           title: risk.type || '',
           description: risk.description || '',
-          level: (risk.severity?.toUpperCase() || 'MEDIUM') as 'HIGH' | 'MEDIUM' | 'LOW',
+          level: mapSeverityToRiskLevel(risk.severity),
         })),
         questions: analysisResult.questions || [],
       };

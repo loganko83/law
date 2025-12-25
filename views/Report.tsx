@@ -14,6 +14,14 @@ interface ReportProps {
   onDone: () => void;
 }
 
+// Helper to safely convert severity string to RiskLevel enum
+const mapSeverityToRiskLevel = (severity: string): RiskLevel => {
+  const upper = severity?.toUpperCase() || '';
+  if (upper === 'HIGH') return RiskLevel.High;
+  if (upper === 'MEDIUM') return RiskLevel.Medium;
+  return RiskLevel.Low;
+};
+
 export const Report: React.FC<ReportProps> = ({ analysis: propAnalysis, analysisId, onDone }) => {
   const { t } = useTranslation();
   const toast = useToast();
@@ -41,7 +49,7 @@ export const Report: React.FC<ReportProps> = ({ analysis: propAnalysis, analysis
               id: `risk-${index}`,
               title: risk.type,
               description: risk.description,
-              level: risk.severity.toUpperCase() as RiskLevel
+              level: mapSeverityToRiskLevel(risk.severity)
             })),
             questions: response.questions
           };

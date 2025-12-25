@@ -40,8 +40,8 @@ describe('OfflineIndicator', () => {
 
     render(<OfflineIndicator />);
 
-    expect(screen.queryByText('You are offline')).not.toBeInTheDocument();
-    expect(screen.queryByText('Back online')).not.toBeInTheDocument();
+    expect(screen.queryByText('offline.youAreOffline')).not.toBeInTheDocument();
+    expect(screen.queryByText('offline.backOnline')).not.toBeInTheDocument();
   });
 
   it('shows offline indicator when offline', () => {
@@ -49,7 +49,7 @@ describe('OfflineIndicator', () => {
 
     render(<OfflineIndicator />);
 
-    expect(screen.getByText('You are offline')).toBeInTheDocument();
+    expect(screen.getByText('offline.youAreOffline')).toBeInTheDocument();
   });
 
   it('shows offline indicator when going offline', async () => {
@@ -57,7 +57,7 @@ describe('OfflineIndicator', () => {
 
     render(<OfflineIndicator />);
 
-    expect(screen.queryByText('You are offline')).not.toBeInTheDocument();
+    expect(screen.queryByText('offline.youAreOffline')).not.toBeInTheDocument();
 
     // Simulate going offline
     act(() => {
@@ -67,7 +67,7 @@ describe('OfflineIndicator', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('You are offline')).toBeInTheDocument();
+      expect(screen.getByText('offline.youAreOffline')).toBeInTheDocument();
     });
   });
 
@@ -77,7 +77,7 @@ describe('OfflineIndicator', () => {
 
     render(<OfflineIndicator />);
 
-    expect(screen.getByText('You are offline')).toBeInTheDocument();
+    expect(screen.getByText('offline.youAreOffline')).toBeInTheDocument();
 
     // Simulate coming back online
     act(() => {
@@ -87,11 +87,11 @@ describe('OfflineIndicator', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Back online')).toBeInTheDocument();
+      expect(screen.getByText('offline.backOnline')).toBeInTheDocument();
     });
 
     // The offline message should be gone
-    expect(screen.queryByText('You are offline')).not.toBeInTheDocument();
+    expect(screen.queryByText('offline.youAreOffline')).not.toBeInTheDocument();
   });
 
   it('hides reconnected message after timeout', async () => {
@@ -112,7 +112,7 @@ describe('OfflineIndicator', () => {
       });
 
       // The reconnected message should be visible
-      expect(screen.getByText('Back online')).toBeInTheDocument();
+      expect(screen.getByText('offline.backOnline')).toBeInTheDocument();
 
       // Advance time by 3 seconds (the timeout duration)
       await act(async () => {
@@ -127,7 +127,7 @@ describe('OfflineIndicator', () => {
       });
 
       // The reconnected message should now be hidden
-      expect(screen.queryByText('Back online')).not.toBeInTheDocument();
+      expect(screen.queryByText('offline.backOnline')).not.toBeInTheDocument();
     } finally {
       // Restore real timers
       vi.useRealTimers();
