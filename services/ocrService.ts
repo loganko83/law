@@ -3,8 +3,20 @@
  *
  * Uses Tesseract.js to extract text from images client-side.
  * Supports Korean and English text recognition.
+ *
+ * NOTE: Tesseract.js is dynamically imported to reduce initial bundle size.
+ * It will only be loaded when an image file needs OCR processing.
  */
-import Tesseract from "tesseract.js";
+
+// Dynamic import for tesseract.js - loaded on demand
+let tesseractModule: typeof import('tesseract.js') | null = null;
+
+async function getTesseract() {
+  if (!tesseractModule) {
+    tesseractModule = await import('tesseract.js');
+  }
+  return tesseractModule.default;
+}
 
 export interface OcrResult {
   text: string;
@@ -51,6 +63,9 @@ export async function extractImageText(
         error: "Image too large. Maximum size is 10MB.",
       };
     }
+
+    // Dynamically load tesseract.js
+    const Tesseract = await getTesseract();
 
     // Perform OCR with Korean + English language support
     const result = await Tesseract.recognize(file, "kor+eng", {

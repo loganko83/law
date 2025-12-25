@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Contract, RiskLevel, ContractAnalysis, UserProfile } from '../types';
 import { ChevronLeft, AlertTriangle, X, Search, List, ArrowUp, ArrowDown, Copy, Check, HelpCircle, Sparkles, RefreshCw, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GoogleGenAI, Type } from "@google/genai";
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../components/Toast';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://trendy.storydot.kr/law/api";
 
 interface DocumentViewProps {
   contract: Contract;
@@ -116,76 +117,42 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ contract, userProfil
 
   const handleAnalyzeContract = async () => {
     if (!contract.content) return;
-    
+
     setIsAnalyzing(true);
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        
-        // Construct System Instruction with RAG Context
-        let contextInstruction = "";
-        if (userProfile) {
-            contextInstruction = `
-            [USER CONTEXT / RAG DATA]
-            The user has provided the following profile information. Use this to detect risks specifically relevant to their business and concerns:
-            - User Name: ${userProfile.name}
-            - Business Type: ${userProfile.businessType}
-            - Business Description: ${userProfile.businessDescription}
-            - Specific Legal Concerns to Watch For: ${userProfile.legalConcerns}
-            
-            When analyzing, highlight risks that contradict the user's business nature or specific concerns.
-            `;
-        }
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Analyze the following contract content and provide a summary, identify risks, suggest questions, and give a safety score (0-100).
-            
-            Contract Content:
-            ${contract.content}`,
-            config: {
-                systemInstruction: `You are a professional legal AI. Analyze the contract objectively and provide results in Korean. ${contextInstruction}`,
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        summary: { type: Type.STRING, description: "A concise summary of the contract in Korean." },
-                        risks: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    id: { type: Type.STRING },
-                                    title: { type: Type.STRING, description: "Risk title in Korean" },
-                                    description: { type: Type.STRING, description: "Detailed risk description in Korean" },
-                                    level: { type: Type.STRING, enum: ["HIGH", "MEDIUM", "LOW"] }
-                                },
-                                required: ["id", "title", "description", "level"]
-                            }
-                        },
-                        questions: { 
-                            type: Type.ARRAY, 
-                            items: { type: Type.STRING },
-                            description: "Questions to ask the counterparty in Korean" 
-                        },
-                        score: { type: Type.INTEGER }
-                    },
-                    required: ["summary", "risks", "questions", "score"]
-                }
-            }
+        // Use backend API for analysis
+        const response = await fetch(`${API_BASE_URL}/ai/quick-analyze`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contract_text: contract.content,
+            business_type: userProfile?.businessType,
+            business_description: userProfile?.businessDescription,
+            legal_concerns: userProfile?.legalConcerns,
+          }),
         });
 
-        if (response.text) {
-            const result = JSON.parse(response.text);
-            const mappedRisks = result.risks.map((r: any) => ({
-                ...r,
-                level: r.level as RiskLevel
-            }));
-            
-            setAnalysisData({
-                ...result,
-                risks: mappedRisks
-            });
+        if (!response.ok) {
+          throw new Error(`Analysis failed: ${response.status}`);
         }
+
+        const result = await response.json();
+
+        const mappedRisks = (result.risks || []).map((r: { id?: string; title: string; description: string; level: string }, index: number) => ({
+            id: r.id || `risk_${index}`,
+            title: r.title,
+            description: r.description,
+            level: r.level as RiskLevel
+        }));
+
+        setAnalysisData({
+            summary: result.summary,
+            score: result.score,
+            risks: mappedRisks,
+            questions: result.questions || []
+        });
     } catch (error) {
         console.error("Analysis failed:", error);
         toast.error(t('document.analysisError'));

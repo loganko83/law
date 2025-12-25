@@ -251,3 +251,24 @@ async def revoke_did(
 
     except DidBaasError as e:
         raise DIDServiceError(f"Failed to revoke DID: {e.message}", status_code=e.status_code)
+
+
+@router.get("/health")
+async def did_health_check(
+    did_client: DidBaasClient = Depends(get_did_baas_client)
+):
+    """
+    Check DID BaaS service health.
+
+    Returns service status and configuration information.
+    No authentication required for health checks.
+    """
+    from app.services.did_baas import is_mock_mode
+
+    health = await did_client.health_check()
+
+    return {
+        "service": "DID BaaS",
+        "mock_mode": is_mock_mode(),
+        **health
+    }

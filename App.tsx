@@ -1,22 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Layout } from './components/Layout';
-import { Home } from './views/Home';
-import { Upload } from './views/Upload';
-import { Report } from './views/Report';
-import { ContractDetail } from './views/ContractDetail';
-import { DocumentView } from './views/DocumentView';
-import { TemplatePreview } from './views/TemplatePreview';
-import { Profile } from './views/Profile';
-import { LegalServices } from './views/LegalServices';
-import { ContentProofGenerator } from './views/ContentProofGenerator';
-import { LegalQA } from './views/LegalQA';
-import { DocuSignSigning } from './views/DocuSignSigning';
-import { Login } from './views/Login';
-import { Register } from './views/Register';
-import { Verify } from './views/Verify';
-import { Billing } from './views/Billing';
-import { DeveloperPortal } from './views/DeveloperPortal';
 import { Contract, ViewState, ContractAnalysis, ContractStatus, UserProfile } from './types';
 import { MOCK_CONTRACTS, MOCK_ANALYSIS_RESULT, STANDARD_TEMPLATES } from './constants';
 import { ToastProvider } from './components/Toast';
@@ -24,6 +8,25 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { LoadingFallback } from './components/LoadingFallback';
+
+// Lazy load views for code splitting
+const Home = lazy(() => import('./views/Home').then(m => ({ default: m.Home })));
+const Upload = lazy(() => import('./views/Upload').then(m => ({ default: m.Upload })));
+const Report = lazy(() => import('./views/Report').then(m => ({ default: m.Report })));
+const ContractDetail = lazy(() => import('./views/ContractDetail').then(m => ({ default: m.ContractDetail })));
+const DocumentView = lazy(() => import('./views/DocumentView').then(m => ({ default: m.DocumentView })));
+const TemplatePreview = lazy(() => import('./views/TemplatePreview').then(m => ({ default: m.TemplatePreview })));
+const Profile = lazy(() => import('./views/Profile').then(m => ({ default: m.Profile })));
+const LegalServices = lazy(() => import('./views/LegalServices').then(m => ({ default: m.LegalServices })));
+const ContentProofGenerator = lazy(() => import('./views/ContentProofGenerator').then(m => ({ default: m.ContentProofGenerator })));
+const LegalQA = lazy(() => import('./views/LegalQA').then(m => ({ default: m.LegalQA })));
+const DocuSignSigning = lazy(() => import('./views/DocuSignSigning').then(m => ({ default: m.DocuSignSigning })));
+const Login = lazy(() => import('./views/Login').then(m => ({ default: m.Login })));
+const Register = lazy(() => import('./views/Register').then(m => ({ default: m.Register })));
+const Verify = lazy(() => import('./views/Verify').then(m => ({ default: m.Verify })));
+const Billing = lazy(() => import('./views/Billing').then(m => ({ default: m.Billing })));
+const DeveloperPortal = lazy(() => import('./views/DeveloperPortal').then(m => ({ default: m.DeveloperPortal })));
 
 // Inner App component that uses auth context
 const AppContent: React.FC = () => {
@@ -327,7 +330,9 @@ const AppContent: React.FC = () => {
       <>
         <OfflineIndicator />
         <div className="max-w-md mx-auto min-h-screen bg-slate-50 dark:bg-slate-900 shadow-2xl transition-colors">
-          {renderContent()}
+          <Suspense fallback={<LoadingFallback fullScreen />}>
+            {renderContent()}
+          </Suspense>
         </div>
       </>
     );
@@ -337,7 +342,9 @@ const AppContent: React.FC = () => {
     <>
       <OfflineIndicator />
       <Layout currentView={currentView} onChangeView={handleNavigate}>
-        {renderContent()}
+        <Suspense fallback={<LoadingFallback />}>
+          {renderContent()}
+        </Suspense>
       </Layout>
     </>
   );

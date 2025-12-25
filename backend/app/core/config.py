@@ -88,6 +88,38 @@ class Settings(BaseSettings):
     DID_BAAS_API_KEY: str = ""
     SAFECON_ISSUER_DID: str = ""
 
+    @field_validator('DID_BAAS_API_KEY')
+    @classmethod
+    def validate_did_api_key(cls, v: str) -> str:
+        """Validate DID BaaS API key format if provided."""
+        if not v or v.strip() == "":
+            # Empty is allowed (uses mock mode)
+            return v
+
+        # Basic format validation - API keys should be alphanumeric with dashes/underscores
+        import re
+        if not re.match(r'^[a-zA-Z0-9_-]{16,}$', v):
+            raise ValueError(
+                "DID_BAAS_API_KEY format is invalid. "
+                "Expected an alphanumeric string with at least 16 characters."
+            )
+        return v
+
+    @field_validator('SAFECON_ISSUER_DID')
+    @classmethod
+    def validate_issuer_did(cls, v: str) -> str:
+        """Validate SafeCon issuer DID format if provided."""
+        if not v or v.strip() == "":
+            # Empty is allowed (uses mock mode)
+            return v
+
+        # DID format validation
+        if not v.startswith("did:"):
+            raise ValueError(
+                "SAFECON_ISSUER_DID must be a valid DID (e.g., did:sw:org:0x...)"
+            )
+        return v
+
     class Config:
         env_file = ".env"
         case_sensitive = True

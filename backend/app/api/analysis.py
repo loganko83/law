@@ -338,3 +338,243 @@ async def ai_health_check(
         "mock_mode": gemini._mock_mode,
         "model": "gemini-2.0-flash-exp"
     }
+
+
+# ==================== Additional AI Proxy Endpoints ====================
+# These endpoints proxy AI calls through the backend for security
+
+class ChatMessage(BaseModel):
+    """Chat message for conversation."""
+    role: str = Field(..., description="Message role: user or assistant")
+    text: str = Field(..., description="Message content")
+
+
+class ChatRequest(BaseModel):
+    """Request for AI chat."""
+    message: str = Field(..., min_length=1, description="User's message")
+    history: list[ChatMessage] = Field(default=[], description="Conversation history")
+    user_profile: Optional[dict] = Field(None, description="User profile for context")
+
+
+class ChatResponse(BaseModel):
+    """Response from AI chat."""
+    response: str
+    model: str
+
+
+@router.post("/chat", response_model=ChatResponse)
+async def ai_chat(
+    request: ChatRequest,
+    gemini: GeminiClient = Depends(get_gemini_client)
+):
+    """
+    AI chat endpoint for legal Q&A.
+
+    Proxies chat requests through the backend for security.
+    """
+    # Build system instruction with user context
+    system_instruction = """You are a helpful AI legal assistant for the Korean legal system.
+    You provide information about Korean laws, regulations, and legal procedures.
+    Always clarify that you are providing general information, not legal advice.
+    Always respond in Korean unless the user writes in English.
+    """
+
+    if request.user_profile:
+        profile = request.user_profile
+        system_instruction += f"""
+        [USER PROFILE CONTEXT]
+        - Name: {profile.get('name', 'User')}
+        - Job/Business: {profile.get('businessType', 'Not specified')}
+        - Description: {profile.get('businessDescription', 'Not specified')}
+        - Known Legal Concerns: {profile.get('legalConcerns', 'Not specified')}
+
+        Tailor your advice to be relevant to their business type.
+        """
+
+    response_text = await gemini.chat(
+        message=request.message,
+        history=[(msg.role, msg.text) for msg in request.history],
+        system_instruction=system_instruction
+    )
+
+    return ChatResponse(
+        response=response_text,
+        model="gemini-2.0-flash-exp"
+    )
+
+
+class SummarizeRequest(BaseModel):
+    """Request for document summarization."""
+    document_text: str = Field(..., min_length=10, description="Document text to summarize")
+    summary_type: str = Field("general", description="Type of summary: general, detailed, bullet")
+    language: str = Field("ko", description="Response language: ko or en")
+
+
+class SummarizeResponse(BaseModel):
+    """Response from summarization."""
+    summary: str
+    key_points: list[str]
+    model: str
+
+
+@router.post("/summarize", response_model=SummarizeResponse)
+async def summarize_document(
+    request: SummarizeRequest,
+    gemini: GeminiClient = Depends(get_gemini_client)
+):
+    """
+    Summarize a document.
+
+    Useful for document viewer to get quick summaries.
+    """
+    lang_instruction = "Respond in Korean." if request.language == "ko" else "Respond in English."
+
+    prompt = f"""Summarize the following document.
+    {lang_instruction}
+
+    Document:
+    {request.document_text[:10000]}
+
+    Provide:
+    1. A concise summary (2-3 paragraphs)
+    2. Key points (5-7 bullet points)
+
+    Format as JSON:
+    {{
+        "summary": "...",
+        "key_points": ["point 1", "point 2", ...]
+    }}
+    """
+
+    response_text = await gemini.generate(prompt)
+
+    # Parse response
+    try:
+        import json
+        # Remove markdown code blocks if present
+        clean_text = response_text.strip()
+        if clean_text.startswith("```json"):
+            clean_text = clean_text[7:]
+        if clean_text.startswith("```"):
+            clean_text = clean_text[3:]
+        if clean_text.endswith("```"):
+            clean_text = clean_text[:-3]
+
+        result = json.loads(clean_text)
+        return SummarizeResponse(
+            summary=result.get("summary", "Summary not available"),
+            key_points=result.get("key_points", []),
+            model="gemini-2.0-flash-exp"
+        )
+    except json.JSONDecodeError:
+        return SummarizeResponse(
+            summary=response_text[:500],
+            key_points=[],
+            model="gemini-2.0-flash-exp"
+        )
+
+
+class ProofRequest(BaseModel):
+    """Request for content proof generation."""
+    content: str = Field(..., min_length=10, description="Content to generate proof for")
+    proof_type: str = Field("existence", description="Type of proof: existence, authorship, timestamp")
+    metadata: Optional[dict] = Field(None, description="Additional metadata")
+
+
+class ProofResponse(BaseModel):
+    """Response from proof generation."""
+    proof_text: str
+    hash: str
+    timestamp: str
+    model: str
+
+
+@router.post("/proof", response_model=ProofResponse)
+async def generate_proof(
+    request: ProofRequest,
+    gemini: GeminiClient = Depends(get_gemini_client)
+):
+    """
+    Generate content proof using AI.
+
+    Creates a verification statement for the content.
+    """
+    import hashlib
+    from datetime import datetime
+
+    # Generate content hash
+    content_hash = hashlib.sha256(request.content.encode()).hexdigest()
+    timestamp = datetime.utcnow().isoformat() + "Z"
+
+    prompt = f"""Generate a formal proof statement for the following content.
+    Content type: {request.proof_type}
+    Timestamp: {timestamp}
+    Content hash: {content_hash}
+
+    Content preview (first 500 chars):
+    {request.content[:500]}
+
+    Generate a formal verification statement in Korean that confirms:
+    1. The content existed at the specified timestamp
+    2. The content hash for verification
+    3. Any relevant metadata
+
+    Keep the response concise and formal.
+    """
+
+    response_text = await gemini.generate(prompt)
+
+    return ProofResponse(
+        proof_text=response_text,
+        hash=content_hash,
+        timestamp=timestamp,
+        model="gemini-2.0-flash-exp"
+    )
+
+
+class NegotiationScriptRequest(BaseModel):
+    """Request for negotiation script generation."""
+    risk_title: str = Field(..., description="Title of the risk")
+    risk_description: str = Field(..., description="Description of the risk")
+    risk_level: str = Field(..., description="Risk level: HIGH, MEDIUM, LOW")
+    contract_context: str = Field(..., max_length=1000, description="Contract context")
+
+
+class NegotiationScriptResponse(BaseModel):
+    """Response with negotiation script."""
+    script: str
+    model: str
+
+
+@router.post("/negotiation-script", response_model=NegotiationScriptResponse)
+async def get_negotiation_script(
+    request: NegotiationScriptRequest,
+    gemini: GeminiClient = Depends(get_gemini_client)
+):
+    """
+    Generate a negotiation script for a specific contract risk.
+    """
+    prompt = f"""You are a negotiation coach helping a freelancer/small business owner.
+
+Based on this contract risk:
+- Title: {request.risk_title}
+- Description: {request.risk_description}
+- Risk Level: {request.risk_level}
+
+Contract context: {request.contract_context}
+
+Provide a polite but firm negotiation script in Korean that the user can use to discuss this issue with the other party. Include:
+1. Opening statement
+2. Specific request for change
+3. Reasonable alternative suggestion
+4. Professional closing
+
+Keep it under 200 words.
+"""
+
+    response_text = await gemini.generate(prompt)
+
+    return NegotiationScriptResponse(
+        script=response_text,
+        model="gemini-2.0-flash-exp"
+    )

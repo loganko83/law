@@ -333,6 +333,106 @@ class GeminiClient:
         except Exception:
             return False
 
+    async def generate(self, prompt: str, system_instruction: str = None) -> str:
+        """
+        Generate text response from Gemini.
+
+        Args:
+            prompt: The prompt text
+            system_instruction: Optional system instruction
+
+        Returns:
+            Generated text response
+        """
+        if self._mock_mode:
+            logger.info("[MOCK] Generating text")
+            return f"[MOCK RESPONSE] This is a mock response to: {prompt[:100]}..."
+
+        try:
+            client = self._get_client()
+
+            config = {
+                "temperature": 0.7,
+                "max_output_tokens": 2048
+            }
+
+            if system_instruction:
+                config["system_instruction"] = system_instruction
+
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=prompt,
+                config=config
+            )
+
+            return response.text
+
+        except Exception as e:
+            logger.error(f"Gemini generate failed: {e}")
+            raise AIServiceError(f"Text generation failed: {str(e)}")
+
+    async def chat(
+        self,
+        message: str,
+        history: List[tuple] = None,
+        system_instruction: str = None
+    ) -> str:
+        """
+        Chat with Gemini maintaining conversation history.
+
+        Args:
+            message: The user's message
+            history: List of (role, text) tuples for conversation history
+            system_instruction: Optional system instruction
+
+        Returns:
+            AI response text
+        """
+        if self._mock_mode:
+            logger.info("[MOCK] Chat response")
+            return f"[MOCK] Thank you for your question about: {message[:100]}... I would provide helpful legal information here."
+
+        try:
+            client = self._get_client()
+
+            # Build conversation contents
+            contents = []
+
+            # Add history
+            if history:
+                for role, text in history:
+                    gemini_role = "model" if role == "assistant" else "user"
+                    contents.append({
+                        "role": gemini_role,
+                        "parts": [{"text": text}]
+                    })
+
+            # Add current message
+            contents.append({
+                "role": "user",
+                "parts": [{"text": message}]
+            })
+
+            config = {
+                "temperature": 0.7,
+                "max_output_tokens": 2048
+            }
+
+            if system_instruction:
+                config["system_instruction"] = system_instruction
+
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=contents,
+                config=config
+            )
+
+            return response.text
+
+        except Exception as e:
+            logger.error(f"Gemini chat failed: {e}")
+            raise AIServiceError(f"Chat failed: {str(e)}")
+
 
 # Singleton instance
 gemini_client = GeminiClient()

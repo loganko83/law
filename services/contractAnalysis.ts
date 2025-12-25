@@ -1,12 +1,14 @@
 /**
  * Contract Analysis Service
  *
- * AI-powered contract analysis using Gemini with optional RAG
- * for legal context from standard clauses and precedents.
+ * AI-powered contract analysis using backend API proxy.
+ * All AI calls are routed through the backend for security.
  */
 
-import { generateWithRAG, generateContent, MODELS } from "./geminiClient";
 import { ContractAnalysis, RiskLevel, RiskPoint } from "../types";
+import { getAccessToken } from "./api";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://trendy.storydot.kr/law/api";
 
 // Error types for better error handling
 export class AnalysisError extends Error {
@@ -61,7 +63,7 @@ export const ERROR_MESSAGES: Record<string, { en: string; ko: string }> = {
   },
 };
 
-// Risk pattern detection (rule-based pre-processing)
+// Risk pattern detection (rule-based pre-processing - kept as local fallback)
 interface RiskPattern {
   pattern: RegExp;
   title: string;
@@ -123,9 +125,9 @@ const RISK_PATTERNS: RiskPattern[] = [
 ];
 
 /**
- * Detect risks using pattern matching (pre-processing)
+ * Detect risks using pattern matching (local fallback)
  */
-const detectPatternRisks = (contractText: string): RiskPoint[] => {
+export const detectPatternRisks = (contractText: string): RiskPoint[] => {
   const risks: RiskPoint[] = [];
 
   RISK_PATTERNS.forEach((pattern, index) => {
@@ -140,108 +142,6 @@ const detectPatternRisks = (contractText: string): RiskPoint[] => {
   });
 
   return risks;
-};
-
-/**
- * System prompt for contract analysis
- */
-const getAnalysisPrompt = (contractText: string, userContext?: string): string => {
-  return `You are an expert Korean contract law analyst. Analyze the following contract and provide a detailed risk assessment.
-
-IMPORTANT RULES:
-1. Provide INFORMATION only, not legal advice
-2. Use objective language: "This clause is 3x higher than standard" (OK), "Do not sign this" (NOT OK)
-3. Explain complex legal terms in plain Korean language
-4. Compare against standard contract templates
-5. Focus on protecting the weaker party (freelancer, tenant, employee)
-
-${userContext ? `USER CONTEXT:\n${userContext}\n` : ""}
-
-CONTRACT TEXT:
-${contractText}
-
-Respond in the following JSON format:
-{
-  "summary": "3-sentence summary focusing on key findings",
-  "safetyScore": 0-100,
-  "risks": [
-    {
-      "id": "unique_id",
-      "title": "Risk title in Korean",
-      "description": "Detailed explanation in Korean",
-      "level": "HIGH|MEDIUM|LOW",
-      "clauseReference": "Reference to specific clause if applicable",
-      "standardComparison": "How this differs from standard contracts"
-    }
-  ],
-  "suggestions": [
-    "Negotiation suggestion 1",
-    "Negotiation suggestion 2"
-  ],
-  "questions": [
-    "Question to ask the other party 1",
-    "Question to ask the other party 2"
-  ]
-}`;
-};
-
-/**
- * Parse AI response to structured analysis
- */
-const parseAnalysisResponse = (response: string, patternRisks: RiskPoint[]): ContractAnalysis => {
-  try {
-    // Extract JSON from response (handle markdown code blocks)
-    const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) ||
-                      response.match(/\{[\s\S]*\}/);
-
-    if (!jsonMatch) {
-      throw new Error("No JSON found in response");
-    }
-
-    const jsonStr = jsonMatch[1] || jsonMatch[0];
-    const parsed = JSON.parse(jsonStr);
-
-    // Convert AI risks to our format
-    const aiRisks: RiskPoint[] = (parsed.risks || []).map((risk: {
-      id?: string;
-      title: string;
-      description: string;
-      level: string;
-    }, index: number) => ({
-      id: risk.id || `ai_${index}`,
-      title: risk.title,
-      description: risk.description,
-      level: risk.level === "HIGH" ? RiskLevel.High :
-             risk.level === "MEDIUM" ? RiskLevel.Medium : RiskLevel.Low,
-    }));
-
-    // Merge pattern-detected risks with AI-detected risks (avoid duplicates)
-    const allRisks = [...patternRisks];
-    aiRisks.forEach((aiRisk: RiskPoint) => {
-      const isDuplicate = patternRisks.some(
-        (pr) => pr.title.toLowerCase().includes(aiRisk.title.toLowerCase().split(" ")[0])
-      );
-      if (!isDuplicate) {
-        allRisks.push(aiRisk);
-      }
-    });
-
-    return {
-      summary: parsed.summary || "Analysis completed",
-      score: Math.min(100, Math.max(0, parsed.safetyScore || 50)),
-      risks: allRisks,
-      questions: parsed.questions || parsed.suggestions || [],
-    };
-  } catch (error) {
-    console.error("Failed to parse analysis response:", error);
-    // Return basic analysis with pattern-detected risks
-    return {
-      summary: "Contract analysis completed. Please review the detected risks.",
-      score: patternRisks.length > 0 ? Math.max(40, 80 - patternRisks.length * 10) : 70,
-      risks: patternRisks,
-      questions: ["Please review all terms carefully before signing."],
-    };
-  }
 };
 
 /**
@@ -304,74 +204,167 @@ const handleApiError = (error: unknown, lang: "en" | "ko" = "ko"): never => {
 };
 
 /**
- * Analyze a contract document
+ * Convert API risk level string to RiskLevel enum
+ */
+const mapRiskLevel = (level: string): RiskLevel => {
+  const upper = level?.toUpperCase() || '';
+  if (upper === 'HIGH' || upper === 'DANGER') return RiskLevel.High;
+  if (upper === 'MEDIUM' || upper === 'CAUTION') return RiskLevel.Medium;
+  return RiskLevel.Low;
+};
+
+/**
+ * Analyze a contract document via backend API
  *
  * @param contractText - The full text of the contract
  * @param userContext - Optional context about the user (business type, concerns)
- * @param useRAG - Whether to use RAG for legal context (default: true)
+ * @param _useRAG - Deprecated: RAG is handled by backend
  * @param lang - Language for error messages (default: "ko")
  * @returns Structured analysis result
  */
 export const analyzeContract = async (
   contractText: string,
   userContext?: string,
-  useRAG: boolean = true,
+  _useRAG: boolean = true,
   lang: "en" | "ko" = "ko"
 ): Promise<ContractAnalysis> => {
   // Step 0: Validate input
   validateContractText(contractText, lang);
 
-  // Step 1: Pattern-based pre-analysis
-  const patternRisks = detectPatternRisks(contractText);
-
-  // Step 2: AI analysis with optional RAG
-  const prompt = getAnalysisPrompt(contractText, userContext);
-
-  let response: { text: string; citations: string[] };
-
+  // Step 1: Call backend API
   try {
-    if (useRAG) {
-      response = await generateWithRAG(prompt, undefined, MODELS.FLASH);
-    } else {
-      const text = await generateContent(prompt, MODELS.FLASH_PREVIEW);
-      response = { text, citations: [] };
+    const response = await fetch(`${API_BASE_URL}/ai/quick-analyze`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contract_text: contractText,
+        business_type: userContext ? extractField(userContext, "businessType") : undefined,
+        business_description: userContext ? extractField(userContext, "businessDescription") : undefined,
+        legal_concerns: userContext ? extractField(userContext, "legalConcerns") : undefined,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Analysis failed: ${response.status}`);
     }
+
+    const result = await response.json();
+
+    // Step 2: Convert API response to ContractAnalysis format
+    const risks: RiskPoint[] = (result.risks || []).map((risk: {
+      id?: string;
+      title: string;
+      description: string;
+      level: string;
+    }, index: number) => ({
+      id: risk.id || `api_${index}`,
+      title: risk.title,
+      description: risk.description,
+      level: mapRiskLevel(risk.level),
+    }));
+
+    return {
+      summary: result.summary || "Analysis completed",
+      score: Math.min(100, Math.max(0, result.score || 50)),
+      risks,
+      questions: result.questions || [],
+    };
   } catch (error) {
+    // Fallback to local pattern detection if backend fails
+    console.warn("Backend analysis failed, using local pattern detection:", error);
+
+    const patternRisks = detectPatternRisks(contractText);
+
+    if (patternRisks.length > 0) {
+      return {
+        summary: "Backend analysis unavailable. Pattern-based risks detected.",
+        score: Math.max(40, 80 - patternRisks.length * 10),
+        risks: patternRisks,
+        questions: ["Please review all terms carefully before signing."],
+      };
+    }
+
     handleApiError(error, lang);
   }
-
-  // Step 3: Parse and combine results
-  const analysis = parseAnalysisResponse(response.text, patternRisks);
-
-  return analysis;
 };
 
 /**
- * Get negotiation script for a specific risk item
+ * Extract field from user context string
+ */
+const extractField = (context: string, field: string): string | undefined => {
+  // Try to parse as JSON first
+  try {
+    const parsed = JSON.parse(context);
+    return parsed[field];
+  } catch {
+    // Fall back to simple extraction
+    const patterns: Record<string, RegExp> = {
+      businessType: /business\s*type[:\s]+([^\n,]+)/i,
+      businessDescription: /business\s*description[:\s]+([^\n]+)/i,
+      legalConcerns: /legal\s*concerns[:\s]+([^\n]+)/i,
+    };
+    const match = context.match(patterns[field]);
+    return match ? match[1].trim() : undefined;
+  }
+};
+
+/**
+ * Get negotiation script for a specific risk item via backend API
  */
 export const getNegotiationScript = async (
   riskItem: RiskPoint,
   contractContext: string
 ): Promise<string> => {
-  const prompt = `You are a negotiation coach helping a freelancer/small business owner.
+  try {
+    const token = getAccessToken();
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
 
-Based on this contract risk:
-- Title: ${riskItem.title}
-- Description: ${riskItem.description}
-- Risk Level: ${riskItem.level}
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
 
-Contract context: ${contractContext.substring(0, 500)}...
+    const response = await fetch(`${API_BASE_URL}/ai/negotiation-script`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        risk_title: riskItem.title,
+        risk_description: riskItem.description,
+        risk_level: riskItem.level,
+        contract_context: contractContext.substring(0, 500),
+      }),
+    });
 
-Provide a polite but firm negotiation script in Korean that the user can use to discuss this issue with the other party. Include:
-1. Opening statement
-2. Specific request for change
-3. Reasonable alternative suggestion
-4. Professional closing
+    if (!response.ok) {
+      // Fallback to basic script if endpoint not available
+      return generateFallbackScript(riskItem);
+    }
 
-Keep it under 200 words.`;
+    const result = await response.json();
+    return result.script || generateFallbackScript(riskItem);
+  } catch {
+    // Fallback script
+    return generateFallbackScript(riskItem);
+  }
+};
 
-  const response = await generateContent(prompt, MODELS.FLASH_PREVIEW);
-  return response;
+/**
+ * Generate a fallback negotiation script locally
+ */
+const generateFallbackScript = (riskItem: RiskPoint): string => {
+  return `Based on the identified risk: ${riskItem.title}
+
+Suggested approach:
+1. Acknowledge the clause and its intent
+2. Express your concerns about: ${riskItem.description}
+3. Propose a balanced alternative that protects both parties
+4. Request written confirmation of any agreed changes
+
+Please consult with a legal professional for specific advice.`;
 };
 
 export default {

@@ -11,9 +11,10 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [react()],
+      // SECURITY: API keys are no longer exposed to frontend
+      // All AI calls are proxied through the backend
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        'process.env.API_URL': JSON.stringify(env.VITE_API_URL || 'https://trendy.storydot.kr/law/api')
       },
       resolve: {
         alias: {
@@ -34,7 +35,7 @@ export default defineConfig(({ mode }) => {
               'vendor-motion': ['framer-motion'],
               'vendor-i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
               'vendor-pdf': ['jspdf', 'html2canvas'],
-              'vendor-ai': ['@google/genai'],
+              // NOTE: @google/genai removed - AI calls now go through backend proxy
             },
             // Optimize chunk file names
             chunkFileNames: 'assets/[name]-[hash].js',

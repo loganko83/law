@@ -136,6 +136,7 @@ async function request<T>(
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
+    credentials: "include",  // Include cookies for httpOnly token support
   });
 
   if (!response.ok) {
@@ -172,18 +173,29 @@ export const authApi = {
   },
 
   async logout(): Promise<void> {
+    try {
+      // Call backend to clear httpOnly cookies
+      await request<void>("/auth/logout", {
+        method: "POST",
+      });
+    } catch {
+      // Ignore logout errors - clear local tokens anyway
+    }
     clearTokens();
   },
 
   async refreshToken(): Promise<AuthTokens> {
+    // Try to refresh using httpOnly cookie (cookies are sent automatically)
+    // Also include localStorage token for backward compatibility
     const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-    if (!refreshToken) {
-      throw new ApiError("No refresh token available", 401);
-    }
+
+    const body = refreshToken
+      ? JSON.stringify({ refresh_token: refreshToken })
+      : "{}";  // Empty body - server will use httpOnly cookie
 
     const tokens = await request<AuthTokens>("/auth/refresh", {
       method: "POST",
-      body: JSON.stringify({ refresh_token: refreshToken }),
+      body,
     }, false);
     setTokens(tokens);
     return tokens;

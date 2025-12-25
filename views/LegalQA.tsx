@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Send, User, Bot, AlertCircle, Database, History, Plus, Trash2, X } from 'lucide-react';
 import { UserProfile } from '../types';
-import { GoogleGenAI } from "@google/genai";
 import { conversationStorage, Conversation, StoredMessage } from '../services/conversationStorage';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://trendy.storydot.kr/law/api";
 
 interface LegalQAProps {
   userProfile?: UserProfile;
@@ -99,40 +100,35 @@ export const LegalQA: React.FC<LegalQAProps> = ({ userProfile, onBack }) => {
     setIsTyping(true);
 
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        
-        // Prepare RAG Context
-        let contextSystemInstruction = "You are a helpful AI legal assistant for the Korean legal system.";
-        if (userProfile) {
-            contextSystemInstruction += `
-            [USER PROFILE CONTEXT]
-            - Name: ${userProfile.name}
-            - Job/Business: ${userProfile.businessType}
-            - Description: ${userProfile.businessDescription}
-            - Known Legal Concerns: ${userProfile.legalConcerns}
-            
-            Tailor your advice to be relevant to a ${userProfile.businessType}. 
-            If the query relates to their known concerns, reference them.
-            Always provide answers in Korean.
-            `;
-        }
-
-        // Construct conversation history for the model
-        const chat = ai.chats.create({
-            model: 'gemini-3-flash-preview',
-            config: {
-                systemInstruction: contextSystemInstruction
-            },
+        // Call backend API instead of direct Gemini
+        const response = await fetch(`${API_BASE_URL}/ai/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: input,
             history: messages.map(m => ({
-                role: m.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: m.text }]
-            }))
+              role: m.role,
+              text: m.text
+            })),
+            user_profile: userProfile ? {
+              name: userProfile.name,
+              businessType: userProfile.businessType,
+              businessDescription: userProfile.businessDescription,
+              legalConcerns: userProfile.legalConcerns
+            } : undefined
+          }),
         });
 
-        const result = await chat.sendMessage({ message: input });
-        
-        if (result.text) {
-            const aiMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', text: result.text };
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.response) {
+            const aiMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', text: result.response };
             setMessages(prev => [...prev, aiMsg]);
         }
     } catch (error) {

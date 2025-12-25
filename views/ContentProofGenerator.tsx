@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, FileText, Download, Send, RefreshCw, Copy, Check, AlertTriangle, Database } from 'lucide-react';
 import { Button } from '../components/Button';
 import { motion } from 'framer-motion';
-import { GoogleGenAI } from "@google/genai";
 import { UserProfile } from '../types';
 import { useToast } from '../components/Toast';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://trendy.storydot.kr/law/api";
 
 interface ContentProofGeneratorProps {
   userProfile?: UserProfile;
@@ -34,58 +35,48 @@ export const ContentProofGenerator: React.FC<ContentProofGeneratorProps> = ({ us
 
   const handleGenerate = async () => {
     if (!formData.sender || !formData.receiver || !formData.content) return;
-    
+
     setStep('GENERATING');
-    
+
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      
-      // Inject RAG Context
-      let userContext = "";
-      if (userProfile) {
-          userContext = `
-          [SENDER CONTEXT]
-          - Business Type: ${userProfile.businessType}
-          - Business Description: ${userProfile.businessDescription}
-          Note: Ensure the tone and vocabulary matches the sender's professional background.
-          `;
-      }
-
-      const prompt = `
-당신은 20년 경력의 법률 전문가입니다. 사용자가 제공한 정보를 바탕으로 법적 효력이 있는 '내용증명(Content Proof)'을 작성해 주세요.
-
-${userContext}
-
-[입력 정보]
-- 발신인: ${formData.sender}
-- 수신인: ${formData.receiver}
-- 제목: ${formData.title || '계약 불이행 및 손해배상 청구의 건'}
-- 상세 상황(사실 관계): ${formData.content}
-
-[작성 가이드]
-1. 문체는 정중하지만 단호한 법률적 어조를 사용하세요.
-2. 문서 형식:
-   - 문서 상단에 [내용증명] 표기
-   - 수신인 및 발신인 정보 (성명/상호, 주소란은 공란으로 '[주소 기입 필요]'라고 표시)
-   - 제목
-   - 본문:
-     1) 귀하(귀사)의 무궁한 발전을 기원합니다.
-     2) 사실 관계 진술 (육하원칙에 의거하여 명확하게)
-     3) 요구 사항 (이행 촉구)
-     4) 불이행 시 법적 조치 예고 (민형사상 책임 등)
-   - 결어
-   - 작성일자 (오늘 날짜: ${new Date().toLocaleDateString()})
-   - 발신인 서명란
-3. Markdown 형식이 아닌 순수 텍스트 형식으로 출력해 주세요.
+      // Build content for proof generation
+      const proofContent = `
+[Content Proof Generation Request]
+- Sender: ${formData.sender}
+- Receiver: ${formData.receiver}
+- Title: ${formData.title || 'Contract Breach and Damage Claim'}
+- Details: ${formData.content}
+- Business Type: ${userProfile?.businessType || 'Not specified'}
+- Business Description: ${userProfile?.businessDescription || 'Not specified'}
+- Date: ${new Date().toLocaleDateString()}
 `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
+      // Use backend API for content proof generation
+      const response = await fetch(`${API_BASE_URL}/ai/proof`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: proofContent,
+          proof_type: 'legal_document',
+          metadata: {
+            sender: formData.sender,
+            receiver: formData.receiver,
+            title: formData.title,
+            business_type: userProfile?.businessType
+          }
+        }),
       });
 
-      if (response.text) {
-        setGeneratedText(response.text);
+      if (!response.ok) {
+        throw new Error(`Generation failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.proof_text) {
+        setGeneratedText(result.proof_text);
         setStep('RESULT');
       } else {
         throw new Error(t('contentProof.emptyResponse', 'AI response is empty.'));

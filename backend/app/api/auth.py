@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Request, Response, Cookie
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from datetime import datetime
+from typing import Optional
+import secrets
 
 from app.db.base import get_db
 from app.models.user import User
@@ -32,15 +34,63 @@ from app.services.redis import redis_service
 from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
+
+# Cookie settings
+REFRESH_TOKEN_COOKIE = "safecon_refresh_token"
+CSRF_TOKEN_COOKIE = "safecon_csrf_token"
+COOKIE_SECURE = not settings.DEBUG  # Use secure cookies in production
+COOKIE_SAMESITE = "lax"  # Allows same-site and top-level navigation
+
+
+def set_auth_cookies(response: Response, refresh_token: str) -> str:
+    """Set authentication cookies and return CSRF token."""
+    csrf_token = secrets.token_urlsafe(32)
+
+    # Set refresh token as httpOnly cookie
+    response.set_cookie(
+        key=REFRESH_TOKEN_COOKIE,
+        value=refresh_token,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        path="/",
+    )
+
+    # Set CSRF token (readable by JavaScript)
+    response.set_cookie(
+        key=CSRF_TOKEN_COOKIE,
+        value=csrf_token,
+        httponly=False,  # JavaScript needs to read this
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        path="/",
+    )
+
+    return csrf_token
+
+
+def clear_auth_cookies(response: Response):
+    """Clear authentication cookies."""
+    response.delete_cookie(key=REFRESH_TOKEN_COOKIE, path="/")
+    response.delete_cookie(key=CSRF_TOKEN_COOKIE, path="/")
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: AsyncSession = Depends(get_db)
 ) -> User:
-    """Get current authenticated user from JWT token."""
-    token = credentials.credentials
+    """Get current authenticated user from JWT token (header or cookie)."""
+    token = None
+
+    # Try to get token from Authorization header first
+    if credentials:
+        token = credentials.credentials
+
+    if not token:
+        raise TokenInvalidError("Authentication required")
 
     # Check if token is blacklisted
     if await redis_service.is_token_blacklisted(token):
@@ -93,9 +143,10 @@ async def register(
 @router.post("/login", response_model=AuthResponse)
 async def login(
     login_data: UserLogin,
+    response: Response,
     db: AsyncSession = Depends(get_db)
 ):
-    """Login and get access token."""
+    """Login and get access token. Sets refresh token in httpOnly cookie."""
     # Find user by email
     result = await db.execute(
         select(User).where(User.email == login_data.email)
@@ -120,20 +171,33 @@ async def login(
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
 
+    # Set refresh token in httpOnly cookie
+    set_auth_cookies(response, refresh_token)
+
     return AuthResponse(
         access_token=access_token,
-        refresh_token=refresh_token,
+        refresh_token=refresh_token,  # Also return for backward compatibility
         user=UserResponse.model_validate(user)
     )
 
 
 @router.post("/refresh", response_model=AuthResponse)
-async def refresh_token(
-    token_data: TokenRefresh,
+async def refresh_token_endpoint(
+    response: Response,
+    token_data: Optional[TokenRefresh] = None,
+    refresh_token_cookie: Optional[str] = Cookie(None, alias=REFRESH_TOKEN_COOKIE),
     db: AsyncSession = Depends(get_db)
 ):
-    """Refresh access token using refresh token."""
-    payload = verify_token(token_data.refresh_token, "refresh")
+    """Refresh access token using refresh token from cookie or body."""
+    # Try to get refresh token from cookie first, then from body
+    token = refresh_token_cookie
+    if not token and token_data:
+        token = token_data.refresh_token
+
+    if not token:
+        raise TokenInvalidError("Refresh token required")
+
+    payload = verify_token(token, "refresh")
 
     if payload is None:
         raise TokenInvalidError("Invalid or expired refresh token")
@@ -156,25 +220,32 @@ async def refresh_token(
     }
 
     access_token = create_access_token(new_token_data)
-    refresh_token = create_refresh_token(new_token_data)
+    new_refresh_token = create_refresh_token(new_token_data)
+
+    # Set new refresh token in cookie
+    set_auth_cookies(response, new_refresh_token)
 
     return AuthResponse(
         access_token=access_token,
-        refresh_token=refresh_token,
+        refresh_token=new_refresh_token,
         user=UserResponse.model_validate(user)
     )
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    response: Response,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ):
-    """Logout and invalidate access token."""
-    token = credentials.credentials
+    """Logout, invalidate access token, and clear cookies."""
+    # Blacklist the access token if provided
+    if credentials:
+        token = credentials.credentials
+        expires_in = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        await redis_service.blacklist_token(token, expires_in)
 
-    # Add token to blacklist (expires when token would expire)
-    expires_in = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
-    await redis_service.blacklist_token(token, expires_in)
+    # Clear authentication cookies
+    clear_auth_cookies(response)
 
     return None
 

@@ -37,6 +37,19 @@ class MockDidBaasClient:
         """No-op for mock client."""
         pass
 
+    async def health_check(self) -> Dict[str, Any]:
+        """Mock health check."""
+        return {
+            "status": "healthy",
+            "mode": "mock",
+            "message": "DID BaaS is running in mock mode",
+            "api_key_configured": False
+        }
+
+    def is_available(self) -> bool:
+        """Check if service is available."""
+        return True  # Mock is always available
+
     def _generate_mock_did(self) -> str:
         """Generate a mock DID address."""
         random_hex = hashlib.sha256(str(uuid.uuid4()).encode()).hexdigest()[:40]
@@ -466,6 +479,51 @@ class DidBaasClient:
     async def verify_signature_credential(self, credential: Dict) -> Dict[str, Any]:
         """Verify a contract signature credential."""
         return await self.verify_w3c_credential(credential)
+
+    async def health_check(self) -> Dict[str, Any]:
+        """
+        Check DID BaaS service health.
+
+        Returns:
+            {
+                "status": "healthy" | "degraded" | "unhealthy",
+                "mode": "live",
+                "api_key_configured": True,
+                "connection_ok": True | False,
+                "error": null | "error message"
+            }
+        """
+        result = {
+            "status": "healthy",
+            "mode": "live",
+            "api_key_configured": bool(self.api_key),
+            "connection_ok": False,
+            "error": None
+        }
+
+        try:
+            # Try to list schemas as a simple connectivity test
+            await self._request("GET", "/schemas")
+            result["connection_ok"] = True
+        except DidBaasError as e:
+            if e.status_code == 401:
+                result["status"] = "unhealthy"
+                result["error"] = "API key is invalid or expired"
+            elif e.status_code == 403:
+                result["status"] = "unhealthy"
+                result["error"] = "API key does not have required permissions"
+            else:
+                result["status"] = "degraded"
+                result["error"] = e.message
+        except Exception as e:
+            result["status"] = "degraded"
+            result["error"] = str(e)
+
+        return result
+
+    def is_available(self) -> bool:
+        """Check if service is configured and likely available."""
+        return bool(self.api_key) and bool(self.base_url)
 
 
 # Singleton instance - use mock if no API key configured
